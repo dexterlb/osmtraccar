@@ -35,11 +35,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
     fun doStuff(view: View) {
         var aidlHelper = this.mAidlHelper;
-        if (aidlHelper == null) {
+        var osmAndHelper = this.mOsmAndHelper;
+        if (aidlHelper == null || osmAndHelper == null) {
             Toast.makeText(this, "foo", Toast.LENGTH_SHORT).show()
             return;
         }
-        aidlHelper.addMapMarker(42.6743, 23.3277, "fmi")
+        osmAndHelper.showLocation(42.6749, 23.3302)
     }
 
     override fun osmandMissing() {

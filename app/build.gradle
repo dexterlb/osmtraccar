@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         applicationId "org.qtrp.osmtraccar"
-        minSdkVersion 24
-        targetSdkVersion 32
+        minSdkVersion 21
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
     }
