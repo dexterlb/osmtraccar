@@ -18,7 +18,9 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+    }
 
+    fun initOsmAndApi(view: View) {
         this.mOsmAndHelper = OsmAndHelper(this, REQUEST_OSMAND_API, this)
         if (this.mOsmAndHelper == null) {
             Toast.makeText(this, "oh no, cannot create osmand helper", Toast.LENGTH_SHORT).show()

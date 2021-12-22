@@ -14,8 +14,13 @@
     <Button
             android:text="do stuff"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/button"
+            android:layout_height="wrap_content" android:id="@+id/buttonDoStuff"
             android:onClick="doStuff"
     />
-
+    <Button
+            android:text="init osmand api"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/buttonInitApi"
+            android:onClick="initOsmAndApi"
+    />
 </LinearLayout>
