@@ -1,15 +1,20 @@
 package org.qtrp.osmtraccar
 
-import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.PersistableBundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
-import net.osmand.aidlapi.map.ALatLon
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
-    private var pointShower: PointShower = PointShower()
+    private var pointShower = PointShower()
+    private var traccarApi = TraccarApi()
+    private val TAG = "main"
+
     private var testPos = Position(
         42,
         42.67440,
@@ -20,6 +25,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        traccarApi.setConnData(Secret.connData)
     }
 
     fun initOsmAndApi(view: View) {
@@ -42,6 +48,15 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
     fun refreshPoints(view: View) {
         pointShower.refreshPoints()
+    }
+
+    fun getTraccarPoints(view: View) {
+        val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+        scope.launch {
+            val points = traccarApi.getPoints()
+            Log.i(TAG, "data: " + points[0].name)
+        }
     }
 
     override fun osmandMissing() {
