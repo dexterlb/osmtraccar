@@ -34,9 +34,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
     fun displayTestPoint(view: View) {
         val testPoint = Point(
-            testPos.pointID,
-            "fmi",
-            testPos,
+            ID = testPos.pointID,
+            name = "fmi",
+            position = testPos,
+            status = PointStatus.ONLINE,
+            type = "building"
         )
         pointShower.setPoints(listOf(testPoint))
     }

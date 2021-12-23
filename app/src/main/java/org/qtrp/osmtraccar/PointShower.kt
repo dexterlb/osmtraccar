@@ -44,10 +44,10 @@ class PointShower() {
         }
 
         // for some reason removeMapLayer doesn't properly remove all points, so we remove them manually
-        for ((_, point) in currentPoints) {
-            val osmandPoint = pointToOsmandPoint(point)
-            aidlHelper.removeMapPoint(MAP_LAYER, osmandPoint.id)
-        }
+        // for ((_, point) in currentPoints) {
+        //    val osmandPoint = pointToOsmandPoint(point)
+        //    aidlHelper.removeMapPoint(MAP_LAYER, osmandPoint.id)
+        // }
 
         currentPoints = hashMapOf()
         aidlHelper.removeMapLayer(MAP_LAYER)
@@ -61,7 +61,7 @@ class PointShower() {
         }
 
         if (!osmandPoints.isEmpty()) {
-            aidlHelper.addMapLayer(MAP_LAYER, "Traccar", 5.5f, osmandPoints, false)
+            aidlHelper.addMapLayer(MAP_LAYER, "Traccar", 5.5f, osmandPoints, true)
         }
     }
 
@@ -95,13 +95,18 @@ class PointShower() {
     private fun pointToOsmandPoint(point: Point): AMapPoint {
         val pos = point.position
 
+        val colour = when (point.status) {
+            PointStatus.ONLINE -> Color.GREEN
+            else               -> Color.RED
+        }
+
         return AMapPoint(
             String.format("point_%d", point.ID),
             point.name,
             point.name,
-            "test",
-            "building",
-            Color.GREEN,
+            point.type,
+            MAP_LAYER,
+            colour,
             ALatLon(pos.lat, pos.lon),
             emptyList(),
             null

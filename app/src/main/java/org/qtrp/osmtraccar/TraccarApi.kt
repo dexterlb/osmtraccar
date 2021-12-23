@@ -43,7 +43,9 @@ class TraccarApi() {
             val point = Point(
                 ID = jsonDevice.getInt("id"),
                 name = jsonDevice.getString("name"),
-                position = Position()
+                position = Position(),
+                type = jsonDevice.getString("category"),
+                status = PointStatus.parse(jsonDevice.getString("status"))
             )
 
             points.add(point)
