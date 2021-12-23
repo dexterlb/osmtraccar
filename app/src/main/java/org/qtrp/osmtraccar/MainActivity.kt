@@ -4,6 +4,7 @@ import android.app.ApplicationErrorReport.TYPE_NONE
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -34,15 +35,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
 
-        binding.logEdit.inputType = TYPE_NONE
         binding.logEdit.setHorizontallyScrolling(true)
 
         setContentView(view)
 
         traccarApi.setConnData(Secret.connData)
-    }
-
-    fun initOsmAndApi(view: View) {
         pointShower.initOsmAndApi(this, this)
     }
 
@@ -65,6 +62,10 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
 
     fun refreshPoints(view: View) {
         pointShower.refreshPoints()
+    }
+
+    fun clearPoints(view: View) {
+        pointShower.clear()
     }
 
     fun getTraccarPoints(view: View) {
@@ -101,7 +102,8 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
         if (colour != Color.WHITE) {
             visualMsg.setSpan(ForegroundColorSpan(colour), 0, visualMsg.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        binding.logEdit.append(visualMsg)
-        binding.logEdit.scrollTo(1, binding.logEdit.lineCount)
+        binding.logEdit.text.append(visualMsg)
+        binding.logEdit.text.append('\n')
+        binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
     }
 }
