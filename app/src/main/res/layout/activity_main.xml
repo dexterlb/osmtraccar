@@ -12,15 +12,27 @@
             android:text="hello, I am an android app"
     />
     <Button
-            android:text="do stuff"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/buttonDoStuff"
-            android:onClick="doStuff"
-    />
-    <Button
             android:text="init osmand api"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:id="@+id/buttonInitApi"
             android:onClick="initOsmAndApi"
+    />
+    <Button
+            android:text="display test point"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/buttonDisplayTestPoint"
+            android:onClick="displayTestPoint"
+    />
+    <Button
+            android:text="move test point eastward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/buttonMoveTestPoint"
+            android:onClick="moveTestPoint"
+    />
+    <Button
+        android:text="refresh points"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:id="@+id/buttonRefreshPoints"
+        android:onClick="refreshPoints"
     />
 </LinearLayout>
