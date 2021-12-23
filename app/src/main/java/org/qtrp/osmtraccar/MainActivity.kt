@@ -1,7 +1,13 @@
 package org.qtrp.osmtraccar
 
+import android.app.ApplicationErrorReport.TYPE_NONE
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType.TYPE_NULL
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -29,6 +35,9 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
+
+        binding.logEdit.inputType = TYPE_NONE
+        binding.logEdit.setHorizontallyScrolling(true)
 
         setContentView(view)
 
@@ -65,7 +74,9 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
         scope.launch {
             val points = traccarApi.getPoints()
-            logMsg(Log.VERBOSE, "points: $points")
+            runOnUiThread {
+                logMsg(Log.VERBOSE, "points: $points")
+            }
             pointShower.setPoints(points)
         }
     }
@@ -76,7 +87,19 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
     private fun logMsg(priority: Int, msg: String) {
         Log.println(priority, TAG, msg)
-        binding.logEdit.setText(binding.logEdit.text.toString() + "\n" + msg)
-        binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
+
+        val colour = when(priority) {
+            Log.ERROR -> Color.RED
+            Log.VERBOSE -> Color.YELLOW
+            Log.WARN -> Color.MAGENTA
+            else -> Color.WHITE
+        }
+
+        val visualMsg = SpannableString(msg)
+        if (colour != Color.WHITE) {
+            visualMsg.setSpan(ForegroundColorSpan(colour), 0, visualMsg.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        binding.logEdit.append(visualMsg)
+        binding.logEdit.scrollTo(1, binding.logEdit.lineCount)
     }
 }
