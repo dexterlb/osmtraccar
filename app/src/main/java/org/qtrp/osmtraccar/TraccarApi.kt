@@ -32,10 +32,12 @@ class TraccarApi() {
         val jsonDevices = JSONArray(data)
         for (i in 0 until jsonDevices.length()) {
             val jsonDevice = jsonDevices.getJSONObject(i)
-            val pos = Position(42, 0.0, 0.0, "foo") // fixme
+
+            val pointID =  jsonDevice.getInt("id")
+            val pos = getPosition(pointID)
 
             val point = Point(
-                ID = jsonDevice.getInt("id"),
+                ID = pointID,
                 name = jsonDevice.getString("name"),
                 position = pos
             )
@@ -44,6 +46,24 @@ class TraccarApi() {
         }
 
         return points
+    }
+
+    private suspend fun getPosition(pointID: Int): Position {
+        val url = apiURL.newBuilder()
+            .addPathSegment("positions")
+            .addQueryParameter("id", pointID.toString())
+            .build()
+
+        val data = apiCall(url)
+
+        val jsonPos = JSONArray(data).getJSONObject(0)
+
+        return Position(
+            pointID = jsonPos.getInt("deviceId"),
+            lat = jsonPos.getDouble("latitude"),
+            lon = jsonPos.getDouble("longitude"),
+            time = jsonPos.getString("deviceTime"),
+        )
     }
 
     private suspend fun apiCall(url: HttpUrl): String {
