@@ -38,10 +38,10 @@ class TraccarApi() {
         for (i in 0 until jsonDevices.length()) {
             val jsonDevice = jsonDevices.getJSONObject(i)
 
-            val pointID =  jsonDevice.getInt("id")
+            val posID = jsonDevice.getInt("positionId")
 
             val point = Point(
-                ID = pointID,
+                ID = jsonDevice.getInt("id"),
                 name = jsonDevice.getString("name"),
                 position = Position()
             )
@@ -50,7 +50,7 @@ class TraccarApi() {
 
             getPositions.add(coroutineScope.async {
                 points[i] = points[i].copy(
-                    position = getPosition(pointID)
+                    position = getPosition(posID)
                 )
             })
         }

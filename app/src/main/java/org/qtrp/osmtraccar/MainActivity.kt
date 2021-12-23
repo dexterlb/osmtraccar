@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
         scope.launch {
             val points = traccarApi.getPoints()
             Log.i(TAG, "points: $points")
+            pointShower.setPoints(points)
         }
     }
 
