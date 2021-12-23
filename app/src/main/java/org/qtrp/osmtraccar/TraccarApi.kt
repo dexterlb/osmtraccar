@@ -10,30 +10,21 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 class TraccarApi() {
-    private var mConnData: TraccarData? = null
-    private var apiURL = "https://example.com".toHttpUrl()
+    private lateinit var connData: TraccarData
     private val client = OkHttpClient()
 
     fun setConnData(connData: TraccarData) {
-        this.mConnData = connData
-        this.apiURL = connData.url.newBuilder()
-            .addPathSegment("api")
-            .build()
+        this.connData = connData
     }
 
     suspend fun getPoints(): List<Point> {
-        val url = apiURL.newBuilder()
+        val url = apiURL().newBuilder()
             .addPathSegment("devices")
             .build()
 
-        val connData = mConnData
-        if (connData == null) {
-            throw IOException("traccar api not initialised with connection data")
-        }
-
         val data = apiCall(url)
 
-        var points = mutableListOf<Point>()
+        val points = mutableListOf<Point>()
 
         val jsonDevices = JSONArray(data)
         val getPositions = mutableListOf<Deferred<Unit>>()
@@ -77,7 +68,7 @@ class TraccarApi() {
     }
 
     private suspend fun getPosition(pointID: Int): Position {
-        val url = apiURL.newBuilder()
+        val url = apiURL().newBuilder()
             .addPathSegment("positions")
             .addQueryParameter("id", pointID.toString())
             .build()
@@ -95,11 +86,6 @@ class TraccarApi() {
     }
 
     private suspend fun apiCall(url: HttpUrl): String {
-        val connData = mConnData
-        if (connData == null) {
-            throw IOException("traccar api not initialised with connection data")
-        }
-
         val req = Request.Builder()
             .url(url)
             .header("Authorization", Credentials.basic(connData.user, connData.pass))
@@ -110,10 +96,6 @@ class TraccarApi() {
 
     private suspend fun reqCall(req: Request): String {
         return suspendCoroutine { cont ->
-            if (mConnData == null) {
-                cont.resumeWithException(IOException("traccar api not initialised with connection data"))
-            }
-
             client.newCall(req).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     cont.resumeWithException(e)
@@ -126,5 +108,11 @@ class TraccarApi() {
                 }
             })
         }
+    }
+
+    private fun apiURL(): HttpUrl {
+        return connData.url.newBuilder()
+            .addPathSegment("api")
+            .build()
     }
 }

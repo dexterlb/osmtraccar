@@ -9,26 +9,19 @@ class PointShowerException(message:String) : Exception(message) {
 }
 
 class PointShower() {
-
     companion object {
         const val REQUEST_OSMAND_API = 1001
         const val MAP_LAYER = "traccar_items"
     }
 
-    private var mAidlHelper: OsmAndAidlHelper? = null
-    private var mOsmAndHelper: OsmAndHelper? = null
+    private lateinit var aidlHelper: OsmAndAidlHelper
+    private lateinit var osmAndHelper: OsmAndHelper
 
     private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
     fun initOsmAndApi(activity: Activity, osmandMissingListener: OsmAndHelper.OnOsmandMissingListener) {
-        this.mOsmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, osmandMissingListener)
-        if (this.mOsmAndHelper == null) {
-            throw PointShowerException("oh no, cannot create osmand helper")
-        }
-        this.mAidlHelper = OsmAndAidlHelper(activity.application, osmandMissingListener)
-        if (this.mAidlHelper == null) {
-            throw PointShowerException("oh no, cannot create aidl helper")
-        }
+        this.osmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, osmandMissingListener)
+        this.aidlHelper = OsmAndAidlHelper(activity.application, osmandMissingListener)
     }
 
     // remove all devices and clear all points from osmand
@@ -37,30 +30,18 @@ class PointShower() {
     }
 
     fun setPoints(points: List<Point>) {
-        var aidlHelper = this.mAidlHelper;
-        var osmAndHelper = this.mOsmAndHelper;
-        if (aidlHelper == null || osmAndHelper == null) {
-            throw PointShowerException("osmand helper not initialised")
-        }
-
-        // for some reason removeMapLayer doesn't properly remove all points, so we remove them manually
-        // for ((_, point) in currentPoints) {
-        //    val osmandPoint = pointToOsmandPoint(point)
-        //    aidlHelper.removeMapPoint(MAP_LAYER, osmandPoint.id)
-        // }
-
         currentPoints = hashMapOf()
         aidlHelper.removeMapLayer(MAP_LAYER)
 
         // now add the new points
-        var osmandPoints: MutableList<AMapPoint> = mutableListOf()
+        val osmandPoints: MutableList<AMapPoint> = mutableListOf()
 
         for (point in points) {
             currentPoints[point.ID] = point
             osmandPoints.add(pointToOsmandPoint(point))
         }
 
-        if (!osmandPoints.isEmpty()) {
+        if (osmandPoints.isNotEmpty()) {
             aidlHelper.addMapLayer(MAP_LAYER, "Traccar", 5.5f, osmandPoints, true)
         }
     }
@@ -72,13 +53,6 @@ class PointShower() {
     }
 
     fun updatePosition(position: Position) {
-        var aidlHelper = this.mAidlHelper;
-        var osmAndHelper = this.mOsmAndHelper;
-        if (aidlHelper == null || osmAndHelper == null) {
-            throw PointShowerException("osmand helper not initialised")
-        }
-
-
         val currentPoint = currentPoints[position.pointID]
         if (currentPoint == null) {
             throw PointShowerException("trying to update non-existant point")
@@ -112,5 +86,4 @@ class PointShower() {
             null
         )
     }
-
 }
