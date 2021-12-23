@@ -38,7 +38,8 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
             name = "fmi",
             position = testPos,
             status = PointStatus.ONLINE,
-            type = "building"
+            type = "building",
+            imageURL = null,
         )
         pointShower.setPoints(listOf(testPoint))
     }

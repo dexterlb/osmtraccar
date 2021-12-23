@@ -26,6 +26,11 @@ class TraccarApi() {
             .addPathSegment("devices")
             .build()
 
+        val connData = mConnData
+        if (connData == null) {
+            throw IOException("traccar api not initialised with connection data")
+        }
+
         val data = apiCall(url)
 
         var points = mutableListOf<Point>()
@@ -39,13 +44,22 @@ class TraccarApi() {
             val jsonDevice = jsonDevices.getJSONObject(i)
 
             val posID = jsonDevice.getInt("positionId")
+            val attrs = jsonDevice.getJSONObject("attributes")
 
             val point = Point(
                 ID = jsonDevice.getInt("id"),
                 name = jsonDevice.getString("name"),
                 position = Position(),
                 type = jsonDevice.getString("category"),
-                status = PointStatus.parse(jsonDevice.getString("status"))
+                status = PointStatus.parse(jsonDevice.getString("status")),
+                imageURL = if (attrs.has("image_url")) {
+                    attrs.getString("image_url").toHttpUrl()
+                } else {
+                    connData.url.newBuilder()
+                        .addPathSegment("images")
+                        .addPathSegment(jsonDevice.getString("category") + ".svg")
+                        .build()
+                }
             )
 
             points.add(point)

@@ -1,10 +1,13 @@
 package org.qtrp.osmtraccar
 
+import okhttp3.HttpUrl
+
 data class Point(
     val ID: Int,
     val name: String,
     val status: PointStatus,
     val type: String,
+    val imageURL: HttpUrl?,
 
     val position: Position,
 )
