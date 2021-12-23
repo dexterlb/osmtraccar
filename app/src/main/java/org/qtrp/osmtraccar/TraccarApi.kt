@@ -1,5 +1,6 @@
 package org.qtrp.osmtraccar
 
+import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.json.JSONArray
@@ -30,20 +31,31 @@ class TraccarApi() {
         var points = mutableListOf<Point>()
 
         val jsonDevices = JSONArray(data)
+        val getPositions = mutableListOf<Deferred<Unit>>()
+
+        val coroutineScope = CoroutineScope(Dispatchers.IO)
+
         for (i in 0 until jsonDevices.length()) {
             val jsonDevice = jsonDevices.getJSONObject(i)
 
             val pointID =  jsonDevice.getInt("id")
-            val pos = getPosition(pointID)
 
             val point = Point(
                 ID = pointID,
                 name = jsonDevice.getString("name"),
-                position = pos
+                position = Position()
             )
 
             points.add(point)
+
+            getPositions.add(coroutineScope.async {
+                points[i] = points[i].copy(
+                    position = getPosition(pointID)
+                )
+            })
         }
+
+        getPositions.awaitAll()
 
         return points
     }
@@ -90,10 +102,10 @@ class TraccarApi() {
                 override fun onFailure(call: Call, e: IOException) {
                     cont.resumeWithException(e)
                 }
-                override fun onResponse(call: Call, resp: Response){
-                    resp.use {
-                        if (!resp.isSuccessful) cont.resumeWithException(IOException("Unexpected code $resp"))
-                        cont.resume(resp.body!!.string())
+                override fun onResponse(call: Call, response: Response){
+                    response.use {
+                        if (!response.isSuccessful) cont.resumeWithException(IOException("Unexpected code $response"))
+                        cont.resume(response.body!!.string())
                     }
                 }
             })
