@@ -8,8 +8,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.widget.Toast;
 
+import android.util.Log;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -115,9 +115,9 @@ public class OsmAndHelper {
 
     private final int mRequestCode;
     private final Activity mActivity;
-    private final OnOsmandMissingListener mOsmandMissingListener;
+    private final OsmandEventListener mOsmandMissingListener;
 
-    public OsmAndHelper(Activity activity, int requestCode, OnOsmandMissingListener listener) {
+    public OsmAndHelper(Activity activity, int requestCode, OsmandEventListener listener) {
         this.mRequestCode = requestCode;
         mActivity = activity;
         mOsmandMissingListener = listener;
@@ -537,7 +537,7 @@ public class OsmAndHelper {
                 mOsmandMissingListener.osmandMissing();
             }
         } catch (Exception e) {
-            Toast.makeText(mActivity, e.getMessage(), Toast.LENGTH_LONG).show();
+            mOsmandMissingListener.osmandLog(Log.ERROR, e.getMessage());
         }
     }
 
@@ -555,7 +555,7 @@ public class OsmAndHelper {
                 mOsmandMissingListener.osmandMissing();
             }
         } catch (Exception e) {
-            Toast.makeText(mActivity, e.getMessage(), Toast.LENGTH_LONG).show();
+            mOsmandMissingListener.osmandLog(Log.ERROR, e.getMessage());
         }
     }
 
@@ -586,8 +586,9 @@ public class OsmAndHelper {
         sendRequest(new OsmAndIntentBuilder(API_CMD_GET_QUICK_ACTION_INFO).setParams(params));
     }
 
-    public interface OnOsmandMissingListener {
+    public interface OsmandEventListener {
         void osmandMissing();
+        void osmandLog(int priority, String msg);
     }
 
     private static class OsmAndIntentBuilder {

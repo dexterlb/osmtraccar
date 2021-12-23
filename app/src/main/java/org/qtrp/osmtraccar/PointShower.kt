@@ -19,7 +19,7 @@ class PointShower() {
 
     private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
-    fun initOsmAndApi(activity: Activity, osmandMissingListener: OsmAndHelper.OnOsmandMissingListener) {
+    fun initOsmAndApi(activity: Activity, osmandMissingListener: OsmAndHelper.OsmandEventListener) {
         this.osmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, osmandMissingListener)
         this.aidlHelper = OsmAndAidlHelper(activity.application, osmandMissingListener)
     }

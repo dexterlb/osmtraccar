@@ -10,8 +10,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.KeyEvent;
-import android.widget.Toast;
 
 import net.osmand.aidlapi.IOsmAndAidlCallback;
 import net.osmand.aidlapi.IOsmAndAidlInterface;
@@ -94,25 +94,15 @@ import net.osmand.aidlapi.search.SearchParams;
 import net.osmand.aidlapi.search.SearchResult;
 import net.osmand.aidlapi.tiles.ASqliteDbFile;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.qtrp.osmtraccar.OsmAndHelper.OnOsmandMissingListener;
+import org.qtrp.osmtraccar.OsmAndHelper.OsmandEventListener;
 
 import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_IO_ERROR;
-import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_MAX_LOCK_TIME_MS;
-import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_PARAMS_ERROR;
 import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_PART_SIZE_LIMIT;
-import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_PART_SIZE_LIMIT_ERROR;
-import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_UNSUPPORTED_FILE_TYPE_ERROR;
-import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_WRITE_LOCK_ERROR;
-import static net.osmand.aidlapi.OsmandAidlConstants.OK_RESPONSE;
 
 public class OsmAndAidlHelper {
 
@@ -124,7 +114,7 @@ public class OsmAndAidlHelper {
     private static final long BUFFER_SIZE = COPY_FILE_PART_SIZE_LIMIT;
 
     private final Application app;
-    private final OnOsmandMissingListener mOsmandMissingListener;
+    private final OsmandEventListener mOsmandMissingListener;
     private IOsmAndAidlInterface mIOsmAndAidlInterface;
 
     private SearchCompleteListener mSearchCompleteListener;
@@ -260,17 +250,17 @@ public class OsmAndAidlHelper {
             // service through an IDL interface, so get a client-side
             // representation of that from the raw service object.
             mIOsmAndAidlInterface = IOsmAndAidlInterface.Stub.asInterface(service);
-            Toast.makeText(app, "OsmAnd service connected", Toast.LENGTH_SHORT).show();
+            mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service connected");
         }
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mIOsmAndAidlInterface = null;
-            Toast.makeText(app, "OsmAnd service disconnected", Toast.LENGTH_SHORT).show();
+            mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service disconnected");
         }
     };
 
-    public OsmAndAidlHelper(Application application, OnOsmandMissingListener listener) {
+    public OsmAndAidlHelper(Application application, OsmandEventListener listener) {
         this.app = application;
         this.mOsmandMissingListener = listener;
         bindService();
@@ -282,10 +272,10 @@ public class OsmAndAidlHelper {
             intent.setPackage(OSMAND_PACKAGE_NAME);
             boolean res = app.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             if (res) {
-                Toast.makeText(app, "OsmAnd service bind", Toast.LENGTH_SHORT).show();
+                mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service bind");
                 return true;
             } else {
-                Toast.makeText(app, "OsmAnd service NOT bind", Toast.LENGTH_SHORT).show();
+                mOsmandMissingListener.osmandLog(Log.ERROR, "OsmAnd service NOT bind");
                 mOsmandMissingListener.osmandMissing();
                 return false;
             }

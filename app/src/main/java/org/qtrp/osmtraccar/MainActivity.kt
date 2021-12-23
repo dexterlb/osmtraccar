@@ -4,20 +4,18 @@ import android.app.ApplicationErrorReport.TYPE_NONE
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.InputType.TYPE_NULL
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
+class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
     private var pointShower = PointShower()
     private var traccarApi = TraccarApi()
     private val TAG = "main"
@@ -82,7 +80,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
     }
 
     override fun osmandMissing() {
-        Toast.makeText(this, "oh no, osmand is missing", Toast.LENGTH_SHORT).show()
+        logMsg(Log.ERROR, "oh no, OsmAnd seems to be missing!")
+    }
+
+    override fun osmandLog(priority: Int, msg: String) {
+        logMsg(priority, msg)
     }
 
     private fun logMsg(priority: Int, msg: String) {
