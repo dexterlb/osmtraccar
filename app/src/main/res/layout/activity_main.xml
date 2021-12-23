@@ -6,39 +6,53 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".MainActivity" android:orientation="vertical">
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="hello, I am an android app"
-    />
-    <Button
-            android:text="init osmand api"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/buttonInitApi"
-            android:onClick="initOsmAndApi"
-    />
-    <Button
-            android:text="display test point"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/buttonDisplayTestPoint"
-            android:onClick="displayTestPoint"
-    />
-    <Button
-            android:text="move test point eastward"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/buttonMoveTestPoint"
-            android:onClick="moveTestPoint"
-    />
-    <Button
-        android:text="refresh points"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" android:id="@+id/buttonRefreshPoints"
-        android:onClick="refreshPoints"
-    />
-    <Button
-            android:text="get points from traccar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/buttonGetTraccarPoints"
-            android:onClick="getTraccarPoints"
-    />
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="50">
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:inputType="textMultiLine"
+                android:gravity="start|top"
+                android:ems="10"
+                android:id="@+id/logEdit"/>
+    </LinearLayout>
+    <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="50">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical">
+            <Button
+                    android:text="init osmand api"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonInitApi"
+                    android:onClick="initOsmAndApi"
+            />
+            <Button
+                    android:text="move test point eastward"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonMoveTestPoint"
+                    android:onClick="moveTestPoint"
+            />
+            <Button
+                    android:text="refresh points"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonRefreshPoints"
+                    android:onClick="refreshPoints"
+            />
+            <Button
+                    android:text="display test point"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonDisplayTestPoint"
+                    android:onClick="displayTestPoint"
+            />
+            <Button
+                    android:text="get points from traccar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonGetTraccarPoints"
+                    android:onClick="getTraccarPoints"
+            />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

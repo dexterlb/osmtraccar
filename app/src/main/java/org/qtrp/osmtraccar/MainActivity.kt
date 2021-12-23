@@ -2,6 +2,7 @@ package org.qtrp.osmtraccar
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -9,11 +10,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
     private var pointShower = PointShower()
     private var traccarApi = TraccarApi()
     private val TAG = "main"
+    private lateinit var binding: ActivityMainBinding
 
     private var testPos = Position(
         42,
@@ -24,7 +27,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+
+        setContentView(view)
+
         traccarApi.setConnData(Secret.connData)
     }
 
@@ -58,7 +66,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
 
         scope.launch {
             val points = traccarApi.getPoints()
-            Log.i(TAG, "points: $points")
+            logMsg(Log.VERBOSE, "points: $points")
             pointShower.setPoints(points)
         }
     }
@@ -67,5 +75,9 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OnOsmandMissingListener {
         Toast.makeText(this, "oh no, osmand is missing", Toast.LENGTH_SHORT).show()
     }
 
-
+    private fun logMsg(priority: Int, msg: String) {
+        Log.println(priority, TAG, msg)
+        binding.logEdit.setText(binding.logEdit.text.toString() + "\n" + msg)
+        binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
+    }
 }
