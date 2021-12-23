@@ -2,6 +2,7 @@ package org.qtrp.osmtraccar
 
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import org.json.JSONArray
 import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -18,6 +19,7 @@ class TraccarApi() {
             .addPathSegment("api")
             .build()
     }
+
     suspend fun getPoints(): List<Point> {
         val url = apiURL.newBuilder()
             .addPathSegment("devices")
@@ -25,7 +27,23 @@ class TraccarApi() {
 
         val data = apiCall(url)
 
-        return listOf(Point(42, data, Position(42, 0.0, 0.0, "foo")))
+        var points = mutableListOf<Point>()
+
+        val jsonDevices = JSONArray(data)
+        for (i in 0 until jsonDevices.length()) {
+            val jsonDevice = jsonDevices.getJSONObject(i)
+            val pos = Position(42, 0.0, 0.0, "foo") // fixme
+
+            val point = Point(
+                ID = jsonDevice.getInt("id"),
+                name = jsonDevice.getString("name"),
+                position = pos
+            )
+
+            points.add(point)
+        }
+
+        return points
     }
 
     private suspend fun apiCall(url: HttpUrl): String {
