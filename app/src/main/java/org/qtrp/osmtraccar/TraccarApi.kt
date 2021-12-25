@@ -9,6 +9,8 @@ import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -122,11 +124,31 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                log(Log.WARN, "websocket message: $text")
+                try {
+                    parseSocketMsg(text, callback)
+                } catch(e: Exception) {
+                    log(Log.ERROR, "unable to parse websocket message:\n    msg: $text\n    err: $e")
+                }
             }
         }
 
         this.socket = client.newWebSocket(apiReq(url), listener)
+    }
+
+    private fun parseSocketMsg(msg: String, callback: (Position) -> Unit) {
+        val jsonOuter = JSONObject(msg)
+        val jsonPositions = try {
+            jsonOuter.getJSONArray("positions")
+        } catch (e: JSONException) {
+            return
+        }
+
+        for (i in 0 until jsonPositions.length()) {
+            val jsonPosition = jsonPositions.getJSONObject(i)
+            val pos = parsePosition(jsonPosition)
+            log(Log.VERBOSE, "got position update: $pos")
+            callback(pos)
+        }
     }
 
     private suspend fun getPosition(pointID: Int): Position {
@@ -139,6 +161,10 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
 
         val jsonPos = JSONArray(data).getJSONObject(0)
 
+        return parsePosition(jsonPos)
+    }
+
+    private fun parsePosition(jsonPos: JSONObject): Position {
         return Position(
             pointID = jsonPos.getInt("deviceId"),
             lat = jsonPos.getDouble("latitude"),

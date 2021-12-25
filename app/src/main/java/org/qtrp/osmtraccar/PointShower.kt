@@ -2,6 +2,7 @@ package org.qtrp.osmtraccar
 
 import android.app.Activity
 import android.graphics.Color
+import android.util.Log
 import net.osmand.aidlapi.map.ALatLon
 import net.osmand.aidlapi.maplayer.point.AMapPoint
 
@@ -16,12 +17,14 @@ class PointShower() {
 
     private lateinit var aidlHelper: OsmAndAidlHelper
     private lateinit var osmAndHelper: OsmAndHelper
+    private lateinit var log: (Int, String) -> Unit
 
     private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
-    fun initOsmAndApi(activity: Activity, osmandMissingListener: OsmAndHelper.OsmandEventListener) {
-        this.osmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, osmandMissingListener)
-        this.aidlHelper = OsmAndAidlHelper(activity.application, osmandMissingListener)
+    fun initOsmAndApi(activity: Activity, eventListener: OsmAndHelper.OsmandEventListener) {
+        this.osmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, eventListener)
+        this.aidlHelper = OsmAndAidlHelper(activity.application, eventListener)
+        this.log = eventListener::osmandLog
     }
 
     // remove all devices and clear all points from osmand
@@ -61,6 +64,10 @@ class PointShower() {
         val point = currentPoint.copy(position = position)
         currentPoints[position.pointID] = point
 
+        val pointID = point.ID
+        val pointName = point.name
+
+        log(Log.VERBOSE, "updating position of point $pointID ($pointName)")
         val osmandPoint = pointToOsmandPoint(point)
 
         aidlHelper.updateMapPoint(MAP_LAYER, osmandPoint.id, osmandPoint.shortName, osmandPoint.fullName, osmandPoint.typeName, osmandPoint.color, osmandPoint.location, osmandPoint.details, osmandPoint.params)
