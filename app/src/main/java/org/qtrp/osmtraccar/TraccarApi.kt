@@ -1,7 +1,6 @@
 package org.qtrp.osmtraccar
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
@@ -198,6 +197,7 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
     private fun socketURL(): HttpUrl {
         return getURL().newBuilder()
             .addPathSegment("api")
+            .addPathSegment("socket")
             .build()
     }
 }
