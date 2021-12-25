@@ -1,5 +1,11 @@
 package org.qtrp.osmtraccar
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
+import com.franmontiel.persistentcookiejar.PersistentCookieJar
+import com.franmontiel.persistentcookiejar.cache.SetCookieCache
+import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -9,13 +15,43 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class TraccarApi() {
-    private lateinit var connData: TraccarData
-    private val client = OkHttpClient()
-    private var socket: WebSocket? = null
+class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit) {
+    companion object {
+        const val BASE_URL_KEY = "base_url"
+    }
 
-    fun setConnData(connData: TraccarData) {
-        this.connData = connData
+    private lateinit var baseURL: HttpUrl
+    private val client = OkHttpClient.Builder()
+        .cookieJar(PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context)))
+        .build()
+
+    private var socket: WebSocket? = null
+    private val log = logger
+
+    private val sharedPrefs = context.getSharedPreferences("traccar_api_prefs", Context.MODE_PRIVATE)
+
+    suspend fun login(url: HttpUrl, email: String, pass: String): Boolean {
+        val loginUrl = url.newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("session")
+            .build()
+
+        val form = FormBody.Builder()
+            .add("email", email)
+            .add("password", pass)
+            .build()
+
+        val req = Request.Builder()
+            .url(loginUrl)
+            .post(form)
+            .build()
+
+        val result = reqCall(req)
+        log(Log.VERBOSE, "login result: $result")
+
+        saveURL(url)
+
+        return true
     }
 
     suspend fun getPoints(): List<Point> {
@@ -47,7 +83,7 @@ class TraccarApi() {
                 imageURL = if (attrs.has("image_url")) {
                     attrs.getString("image_url").toHttpUrl()
                 } else {
-                    connData.url.newBuilder()
+                    getURL().newBuilder()
                         .addPathSegment("images")
                         .addPathSegment(jsonDevice.getString("category") + ".svg")
                         .build()
@@ -69,26 +105,29 @@ class TraccarApi() {
     }
 
     fun subscribeToPositionUpdates(callback: (Position) -> Unit) {
-        val url = apiURL().newBuilder()
-            .addPathSegment("socket")
-            .build()
+        val url = socketURL()
+
+        log(Log.INFO, "connecting to websocket at: $url")
 
         val listener = object: WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                // logging here
+                log(Log.INFO, "websocket opened")
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                // more logging
+                log(Log.ERROR, "websocket failure: $t")
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                // even more logging
+                log(Log.WARN, "websocket closed")
+            }
+
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                log(Log.WARN, "websocket message: $text")
             }
         }
 
         this.socket = client.newWebSocket(apiReq(url), listener)
-        callback(Position(42, 42.0, 23.0, "foo"))
     }
 
     private suspend fun getPosition(pointID: Int): Position {
@@ -114,9 +153,9 @@ class TraccarApi() {
     }
 
     private fun apiReq(url: HttpUrl): Request {
+        log(Log.VERBOSE, "calling api: $url")
         return Request.Builder()
             .url(url)
-            .header("Authorization", Credentials.basic(connData.user, connData.pass))
             .build()
     }
 
@@ -136,8 +175,28 @@ class TraccarApi() {
         }
     }
 
+    private fun saveURL(url: HttpUrl) {
+        with (sharedPrefs.edit()) {
+            putString(BASE_URL_KEY, url.toString())
+            apply()
+        }
+    }
+
+    fun getURL(): HttpUrl {
+        if (!::baseURL.isInitialized) {
+            baseURL = sharedPrefs.getString(BASE_URL_KEY, "https://example.com")!!.toHttpUrl()
+        }
+        return baseURL
+    }
+
     private fun apiURL(): HttpUrl {
-        return connData.url.newBuilder()
+        return getURL().newBuilder()
+            .addPathSegment("api")
+            .build()
+    }
+
+    private fun socketURL(): HttpUrl {
+        return getURL().newBuilder()
             .addPathSegment("api")
             .build()
     }

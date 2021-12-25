@@ -25,6 +25,12 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical">
             <Button
+                    android:text="login to traccar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonTraccarLogin"
+                    android:onClick="traccarLogin"
+            />
+            <Button
                     android:text="get points from traccar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" android:id="@+id/buttonGetTraccarPoints"

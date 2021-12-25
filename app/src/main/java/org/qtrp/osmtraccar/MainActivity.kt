@@ -16,9 +16,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
+@Suppress("UNUSED_PARAMETER")
 class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
-    private var pointShower = PointShower()
-    private var traccarApi = TraccarApi()
+    private val pointShower = PointShower()
+    private lateinit var traccarApi: TraccarApi
     private val TAG = "main"
     private lateinit var binding: ActivityMainBinding
 
@@ -39,8 +40,17 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
 
         setContentView(view)
 
-        traccarApi.setConnData(Secret.connData)
+        traccarApi = TraccarApi(this, ::logMsg)
+
         pointShower.initOsmAndApi(this, this)
+    }
+
+    fun traccarLogin(view: View) {
+        val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+        scope.launch {
+            traccarApi.login(Secret.connData.url, Secret.connData.user, Secret.connData.pass)
+        }
     }
 
     fun displayTestPoint(view: View) {
@@ -73,10 +83,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
 
         scope.launch {
             val points = traccarApi.getPoints()
-            runOnUiThread {
-                logMsg(Log.VERBOSE, "points: $points")
-            }
+            logMsg(Log.VERBOSE, "points: $points")
             pointShower.setPoints(points)
+
+            traccarApi.subscribeToPositionUpdates {
+                pointShower.updatePosition(it)
+            }
         }
     }
 
@@ -93,7 +105,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
 
         val colour = when(priority) {
             Log.ERROR -> Color.RED
-            Log.VERBOSE -> Color.YELLOW
+            Log.VERBOSE -> Color.GREEN
             Log.WARN -> Color.MAGENTA
             else -> Color.WHITE
         }
@@ -102,8 +114,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
         if (colour != Color.WHITE) {
             visualMsg.setSpan(ForegroundColorSpan(colour), 0, visualMsg.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        binding.logEdit.text.append(visualMsg)
-        binding.logEdit.text.append('\n')
-        binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
+
+        runOnUiThread {
+            binding.logEdit.text.append(visualMsg)
+            binding.logEdit.text.append('\n')
+            binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
+        }
     }
 }
