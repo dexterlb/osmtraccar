@@ -12,6 +12,7 @@ import kotlin.coroutines.suspendCoroutine
 class TraccarApi() {
     private lateinit var connData: TraccarData
     private val client = OkHttpClient()
+    private var socket: WebSocket? = null
 
     fun setConnData(connData: TraccarData) {
         this.connData = connData
@@ -67,6 +68,29 @@ class TraccarApi() {
         return points
     }
 
+    fun subscribeToPositionUpdates(callback: (Position) -> Unit) {
+        val url = apiURL().newBuilder()
+            .addPathSegment("socket")
+            .build()
+
+        val listener = object: WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: Response) {
+                // logging here
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                // more logging
+            }
+
+            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                // even more logging
+            }
+        }
+
+        this.socket = client.newWebSocket(apiReq(url), listener)
+        callback(Position(42, 42.0, 23.0, "foo"))
+    }
+
     private suspend fun getPosition(pointID: Int): Position {
         val url = apiURL().newBuilder()
             .addPathSegment("positions")
@@ -86,12 +110,14 @@ class TraccarApi() {
     }
 
     private suspend fun apiCall(url: HttpUrl): String {
-        val req = Request.Builder()
+        return reqCall(apiReq(url))
+    }
+
+    private fun apiReq(url: HttpUrl): Request {
+        return Request.Builder()
             .url(url)
             .header("Authorization", Credentials.basic(connData.user, connData.pass))
             .build()
-
-        return reqCall(req)
     }
 
     private suspend fun reqCall(req: Request): String {
