@@ -82,7 +82,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
         val scope = CoroutineScope(Job() + Dispatchers.IO)
 
         scope.launch {
-            val points = traccarApi.getPoints()
+            val points = try {
+                traccarApi.getPoints()
+            } catch (e: Exception) {
+                logMsg(Log.ERROR, "could not get data from traccar: $e")
+                return@launch
+            }
             logMsg(Log.VERBOSE, "points: $points")
             pointShower.setPoints(points)
 

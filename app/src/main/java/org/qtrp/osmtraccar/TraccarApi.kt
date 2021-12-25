@@ -166,7 +166,10 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
                 }
                 override fun onResponse(call: Call, response: Response){
                     response.use {
-                        if (!response.isSuccessful) cont.resumeWithException(IOException("Unexpected code $response"))
+                        if (!response.isSuccessful) {
+                            cont.resumeWithException(IOException("Unexpected code $response"))
+                            return@use
+                        }
                         cont.resume(response.body!!.string())
                     }
                 }
