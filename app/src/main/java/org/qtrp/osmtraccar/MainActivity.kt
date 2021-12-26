@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         traccarApi = TraccarApi(this, this)
 
         pointShower.initOsmAndApi(this, this)
+        pointShower.clear()
     }
 
     fun traccarLogin(view: View) {
