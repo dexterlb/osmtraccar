@@ -42,7 +42,14 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
             val scope = CoroutineScope(Job() + Dispatchers.IO)
 
             scope.launch {
-                traccarApi.login(connData.url, connData.email, connData.pass)
+                try {
+                    if (connData.pass == "") {
+                        logMsg(Log.WARN, "trying to login with empty password; this is probably not what you want.")
+                    }
+                    traccarApi.login(connData.url, connData.email, connData.pass)
+                } catch(e: Exception) {
+                    logMsg(Log.ERROR, "unable to login: $e\nyou entered the correct URL, email and password, right?")
+                }
             }
         }
 
