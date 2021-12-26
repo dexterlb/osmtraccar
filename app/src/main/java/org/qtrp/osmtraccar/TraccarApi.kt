@@ -222,6 +222,7 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
     }
 
     private fun saveLogin(url: HttpUrl, email: String) {
+        baseURL = url
         with (sharedPrefs.edit()) {
             putString(BASE_URL_KEY, url.toString())
             putString(EMAIL_KEY, email)
