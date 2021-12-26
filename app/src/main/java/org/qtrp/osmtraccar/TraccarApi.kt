@@ -140,6 +140,10 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
         socket = client.newWebSocket(apiReq(url), listener)
     }
 
+    fun unsubscribePositionUpdates() {
+        this.socket?.close(1000, "user wants to disconnect")
+    }
+
     private fun parseSocketMsg(msg: String) {
         val jsonOuter = JSONObject(msg)
         val jsonPositions = try {

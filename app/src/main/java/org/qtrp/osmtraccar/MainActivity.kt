@@ -53,32 +53,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         }
     }
 
-    fun displayTestPoint(view: View) {
-        val testPoint = Point(
-            ID = testPos.pointID,
-            name = "fmi",
-            position = testPos,
-            status = PointStatus.ONLINE,
-            type = "building",
-            imageURL = null,
-        )
-        pointShower.setPoints(listOf(testPoint))
-    }
-
-    fun moveTestPoint(view: View) {
-        testPos = testPos.copy(lon = testPos.lon + 0.001)
-        pointShower.updatePosition(testPos)
-    }
-
-    fun refreshPoints(view: View) {
-        pointShower.refreshPoints()
-    }
-
-    fun clearPoints(view: View) {
-        pointShower.clear()
-    }
-
-    fun getTraccarPoints(view: View) {
+    fun traccarConnect(view: View) {
         val scope = CoroutineScope(Job() + Dispatchers.IO)
 
         scope.launch {
@@ -86,6 +61,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
                 traccarApi.getPoints()
             } catch (e: Exception) {
                 logMsg(Log.ERROR, "could not get data from traccar: $e")
+                traccarSocketConnectedState(false)
                 return@launch
             }
             logMsg(Log.VERBOSE, "points: $points")
@@ -93,6 +69,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
 
             traccarApi.subscribeToPositionUpdates()
         }
+
+        binding.buttonTraccarConnect.isEnabled = false
+    }
+
+    fun traccarDisconnect(view: View) {
+        traccarApi.unsubscribePositionUpdates()
     }
 
     override fun osmandMissing() {
@@ -104,7 +86,16 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     }
 
     override fun traccarSocketConnectedState(isConnected: Boolean) {
-
+        runOnUiThread {
+            if (isConnected) {
+                binding.buttonTraccarDisconnect.isEnabled = true
+                binding.buttonTraccarConnect.isEnabled = false
+            } else {
+                binding.buttonTraccarDisconnect.isEnabled = false
+                binding.buttonTraccarConnect.isEnabled = true
+                pointShower.clear()
+            }
+        }
     }
 
     override fun traccarPositionUpdate(pos: Position) {
@@ -113,6 +104,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
 
     override fun traccarApiLogMessage(level: Int, msg: String) {
         logMsg(level, "[traccar] $msg")
+    }
+
+    override fun onDestroy() {
+        pointShower.clear()
+        traccarApi.unsubscribePositionUpdates()
+        super.onDestroy()
     }
 
     private fun logMsg(priority: Int, msg: String) {
