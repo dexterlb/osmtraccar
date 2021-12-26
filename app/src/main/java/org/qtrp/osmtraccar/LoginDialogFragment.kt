@@ -24,7 +24,7 @@ class LoginDialogFragment(onLogin: (TraccarConnData) -> Unit): DialogFragment() 
             builder.setView(binding.root)
                 // Add action buttons
                 .setPositiveButton("login",
-                    DialogInterface.OnClickListener { dialog, id ->
+                    DialogInterface.OnClickListener { dialog, _ ->
                         val url = try {
                             binding.url.text.toString().toHttpUrl()
                         } catch (e: Exception) {
@@ -37,11 +37,11 @@ class LoginDialogFragment(onLogin: (TraccarConnData) -> Unit): DialogFragment() 
                         )
 
                         onLogin(data)
-                        getDialog()!!.cancel()
+                        dialog.dismiss()
                     })
                 .setNegativeButton("cancel",
-                    DialogInterface.OnClickListener { dialog, id ->
-                        getDialog()!!.cancel()
+                    DialogInterface.OnClickListener { dialog, _ ->
+                        dialog.cancel()
                     })
             builder.create()
         } ?: throw IllegalStateException("Activity cannot be null")
