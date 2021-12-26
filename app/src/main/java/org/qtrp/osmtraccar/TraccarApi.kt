@@ -2,7 +2,6 @@ package org.qtrp.osmtraccar
 
 import android.content.Context
 import android.util.Log
-import com.franmontiel.persistentcookiejar.PersistentCookieJar
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
 import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import kotlinx.coroutines.*
@@ -20,6 +19,7 @@ import kotlin.coroutines.suspendCoroutine
 class TraccarApi(context: Context, eventListener: TraccarEventListener) {
     companion object {
         const val BASE_URL_KEY = "base_url"
+        const val EMAIL_KEY = "email"
     }
 
     private lateinit var baseURL: HttpUrl
@@ -52,7 +52,7 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
         val result = reqCall(req)
         log(Log.VERBOSE, "login result: $result")
 
-        saveURL(url)
+        saveLogin(url, email)
 
         return true
     }
@@ -86,7 +86,7 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
                 imageURL = if (attrs.has("image_url")) {
                     attrs.getString("image_url").toHttpUrl()
                 } else {
-                    getURL().newBuilder()
+                    mustGetURL().newBuilder()
                         .addPathSegment("images")
                         .addPathSegment(jsonDevice.getString("category") + ".svg")
                         .build()
@@ -221,28 +221,38 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
         eventListener.traccarSocketConnectedState(false)
     }
 
-    private fun saveURL(url: HttpUrl) {
+    private fun saveLogin(url: HttpUrl, email: String) {
         with (sharedPrefs.edit()) {
             putString(BASE_URL_KEY, url.toString())
+            putString(EMAIL_KEY, email)
             apply()
         }
     }
 
-    fun getURL(): HttpUrl {
+    fun getURL(): HttpUrl? {
+        return sharedPrefs.getString(BASE_URL_KEY, null)?.toHttpUrl()
+    }
+
+    fun getEmail(): String? {
+        return sharedPrefs.getString(EMAIL_KEY, null)
+    }
+
+    // todo: rename this
+    private fun mustGetURL(): HttpUrl {
         if (!::baseURL.isInitialized) {
-            baseURL = sharedPrefs.getString(BASE_URL_KEY, "https://example.com")!!.toHttpUrl()
+            baseURL = getURL() ?: "https://example.com".toHttpUrl()
         }
         return baseURL
     }
 
     private fun apiURL(): HttpUrl {
-        return getURL().newBuilder()
+        return mustGetURL().newBuilder()
             .addPathSegment("api")
             .build()
     }
 
     private fun socketURL(): HttpUrl {
-        return getURL().newBuilder()
+        return mustGetURL().newBuilder()
             .addPathSegment("api")
             .addPathSegment("socket")
             .build()

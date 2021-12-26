@@ -46,7 +46,18 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
             }
         }
 
-        LoginDialogFragment(onLogin).show(supportFragmentManager, "login")
+        var oldData: TraccarConnData? = null
+        var oldURL = traccarApi.getURL()
+        var oldEmail = traccarApi.getEmail()
+        if (oldURL != null && oldEmail != null) {
+            oldData = TraccarConnData(
+                email = oldEmail,
+                url = oldURL,
+                pass = ""
+            )
+        }
+
+        LoginDialogFragment(onLogin, oldData).show(supportFragmentManager, "login")
     }
 
     fun traccarConnect(view: View) {
