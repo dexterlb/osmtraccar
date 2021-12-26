@@ -1,10 +1,8 @@
 package org.qtrp.osmtraccar
 
-import android.app.ApplicationErrorReport.TYPE_NONE
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -40,11 +38,15 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     }
 
     fun traccarLogin(view: View) {
-        val scope = CoroutineScope(Job() + Dispatchers.IO)
+        val onLogin: (TraccarConnData) -> Unit = { connData ->
+            val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-        scope.launch {
-            traccarApi.login(Secret.connData.url, Secret.connData.user, Secret.connData.pass)
+            scope.launch {
+                traccarApi.login(connData.url, connData.email, connData.pass)
+            }
         }
+
+        LoginDialogFragment(onLogin).show(supportFragmentManager, "login")
     }
 
     fun traccarConnect(view: View) {
