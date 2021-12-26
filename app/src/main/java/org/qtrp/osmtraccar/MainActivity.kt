@@ -23,13 +23,6 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     private val TAG = "main"
     private lateinit var binding: ActivityMainBinding
 
-    private var testPos = Position(
-        42,
-        42.67440,
-        23.33044,
-        "today"
-    )
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
