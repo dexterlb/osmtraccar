@@ -105,16 +105,15 @@ import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_IO_ERROR;
 import static net.osmand.aidlapi.OsmandAidlConstants.COPY_FILE_PART_SIZE_LIMIT;
 
 public class OsmAndAidlHelper {
-
-    private static final String OSMAND_FREE_PACKAGE_NAME = "net.osmand";
-    private static final String OSMAND_PLUS_PACKAGE_NAME = "net.osmand.plus";
-    private static final String OSMAND_PACKAGE_NAME = OSMAND_PLUS_PACKAGE_NAME;
+    public static final String OSMAND_FREE_PACKAGE_NAME = "net.osmand";
+    public static final String OSMAND_PLUS_PACKAGE_NAME = "net.osmand.plus";
 
     private static final int MAX_RETRY_COUNT = 10;
     private static final long BUFFER_SIZE = COPY_FILE_PART_SIZE_LIMIT;
 
     private final Application app;
     private final OsmandEventListener mOsmandMissingListener;
+    private final String mOsmandPackageName;
     private IOsmAndAidlInterface mIOsmAndAidlInterface;
 
     private SearchCompleteListener mSearchCompleteListener;
@@ -260,16 +259,17 @@ public class OsmAndAidlHelper {
         }
     };
 
-    public OsmAndAidlHelper(Application application, OsmandEventListener listener) {
+    public OsmAndAidlHelper(Application application, OsmandEventListener listener, String osmandPackage) {
         this.app = application;
         this.mOsmandMissingListener = listener;
-        bindService();
+        this.mOsmandPackageName = osmandPackage;
+        bindService(osmandPackage);
     }
 
-    private boolean bindService() {
+    private boolean bindService(String osmandPackage) {
         if (mIOsmAndAidlInterface == null) {
             Intent intent = new Intent("net.osmand.aidl.OsmandAidlServiceV2");
-            intent.setPackage(OSMAND_PACKAGE_NAME);
+            intent.setPackage(osmandPackage);
             boolean res = app.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             if (res) {
                 mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service bind");
@@ -772,7 +772,7 @@ public class OsmAndAidlHelper {
     public boolean importGpxFromUri(Uri gpxUri, String fileName, String color, boolean show) {
         if (mIOsmAndAidlInterface != null) {
             try {
-                app.grantUriPermission(OSMAND_PACKAGE_NAME, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                app.grantUriPermission(mOsmandPackageName, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 return mIOsmAndAidlInterface.importGpx(new ImportGpxParams(gpxUri, fileName, color, show));
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -790,7 +790,7 @@ public class OsmAndAidlHelper {
     public boolean navigateGpxFromUri(Uri gpxUri, boolean force, boolean needLocationPermission) {
         if (mIOsmAndAidlInterface != null) {
             try {
-                app.grantUriPermission(OSMAND_PACKAGE_NAME, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                app.grantUriPermission(mOsmandPackageName, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 return mIOsmAndAidlInterface.navigateGpx(new NavigateGpxParams(gpxUri, force, needLocationPermission));
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -1527,7 +1527,7 @@ public class OsmAndAidlHelper {
     public boolean getBitmapForGpx(Uri gpxUri, float density, int widthPixels, int heightPixels, int color) {
         if (mIOsmAndAidlInterface != null) {
             try {
-                app.grantUriPermission(OSMAND_PACKAGE_NAME, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                app.grantUriPermission(mOsmandPackageName, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 return mIOsmAndAidlInterface.getBitmapForGpx(new CreateGpxBitmapParams(gpxUri, density, widthPixels, heightPixels, color), mIOsmAndAidlCallback);
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -1540,7 +1540,7 @@ public class OsmAndAidlHelper {
     public boolean getBitmapForGpx(File gpxFile, float density, int widthPixels, int heightPixels, int color) {
         if (mIOsmAndAidlInterface != null) {
             try {
-//				app.grantUriPermission(OSMAND_PACKAGE_NAME, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//				app.grantUriPermission(mOsmAndPackageName, gpxUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 return mIOsmAndAidlInterface.getBitmapForGpx(new CreateGpxBitmapParams(gpxFile, density, widthPixels, heightPixels, color), mIOsmAndAidlCallback);
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -1991,7 +1991,7 @@ public class OsmAndAidlHelper {
     public boolean importProfile(Uri profileUri, ArrayList<AExportSettingsType> settingsTypeList, boolean replace, boolean silent) {
         if (mIOsmAndAidlInterface != null) {
             try {
-                app.grantUriPermission(OSMAND_PACKAGE_NAME, profileUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                app.grantUriPermission(mOsmandPackageName, profileUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 return mIOsmAndAidlInterface.importProfile(new ProfileSettingsParams(profileUri, settingsTypeList,
                         replace, silent, null, -1));
             } catch (RemoteException e) {

@@ -21,6 +21,8 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     private val TAG = "main"
     private lateinit var binding: ActivityMainBinding
 
+    private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -33,8 +35,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
 
         traccarApi = TraccarApi(this, this)
 
-        pointShower.initOsmAndApi(this, this)
-        pointShower.clear()
+        initOsmandApi()
     }
 
     fun traccarLogin(view: View) {
@@ -92,6 +93,12 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     }
 
     override fun osmandMissing() {
+        if (osmandPackage == OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME) {
+            osmandPackage = OsmAndAidlHelper.OSMAND_FREE_PACKAGE_NAME
+            logMsg(Log.INFO, "failed connecting to OsmAnd Plus. Trying regular OsmAnd.")
+            initOsmandApi()
+            return
+        }
         logMsg(Log.ERROR, "oh no, OsmAnd seems to be missing!")
     }
 
@@ -124,6 +131,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         pointShower.clear()
         traccarApi.unsubscribePositionUpdates()
         super.onDestroy()
+    }
+
+    private fun initOsmandApi() {
+        pointShower.initOsmAndApi(this, this, osmandPackage)
+        pointShower.clear()
     }
 
     private fun logMsg(priority: Int, msg: String) {
