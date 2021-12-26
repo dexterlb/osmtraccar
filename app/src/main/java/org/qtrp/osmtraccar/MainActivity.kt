@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
 @Suppress("UNUSED_PARAMETER")
-class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
+class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, TraccarEventListener {
     private val pointShower = PointShower()
     private lateinit var traccarApi: TraccarApi
     private val TAG = "main"
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
 
         setContentView(view)
 
-        traccarApi = TraccarApi(this, ::logMsg)
+        traccarApi = TraccarApi(this, this)
 
         pointShower.initOsmAndApi(this, this)
     }
@@ -91,9 +91,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
             logMsg(Log.VERBOSE, "points: $points")
             pointShower.setPoints(points)
 
-            traccarApi.subscribeToPositionUpdates {
-                pointShower.updatePosition(it)
-            }
+            traccarApi.subscribeToPositionUpdates()
         }
     }
 
@@ -102,7 +100,19 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener {
     }
 
     override fun osmandLog(priority: Int, msg: String) {
-        logMsg(priority, msg)
+        logMsg(priority, "[osmand] $msg")
+    }
+
+    override fun traccarSocketConnectedState(isConnected: Boolean) {
+
+    }
+
+    override fun traccarPositionUpdate(pos: Position) {
+        pointShower.updatePosition(pos)
+    }
+
+    override fun traccarApiLogMessage(level: Int, msg: String) {
+        logMsg(level, "[traccar] $msg")
     }
 
     private fun logMsg(priority: Int, msg: String) {

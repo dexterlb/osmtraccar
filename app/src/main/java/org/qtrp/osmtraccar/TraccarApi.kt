@@ -16,7 +16,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit) {
+
+class TraccarApi(context: Context, eventListener: TraccarEventListener) {
     companion object {
         const val BASE_URL_KEY = "base_url"
     }
@@ -27,7 +28,8 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
         .build()
 
     private var socket: WebSocket? = null
-    private val log = logger
+    private val log = eventListener::traccarApiLogMessage
+    private val eventListener = eventListener
 
     private val sharedPrefs = context.getSharedPreferences("traccar_api_prefs", Context.MODE_PRIVATE)
 
@@ -105,7 +107,7 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
         return points
     }
 
-    fun subscribeToPositionUpdates(callback: (Position) -> Unit) {
+    fun subscribeToPositionUpdates() {
         val url = socketURL()
 
         log(Log.INFO, "connecting to websocket at: $url")
@@ -113,29 +115,32 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
         val listener = object: WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 log(Log.INFO, "websocket opened")
+                socketConnected()
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 log(Log.ERROR, "websocket failure: $t")
+                socketDisconnected()
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 log(Log.WARN, "websocket closed")
+                socketDisconnected()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
-                    parseSocketMsg(text, callback)
+                    parseSocketMsg(text)
                 } catch(e: Exception) {
                     log(Log.ERROR, "unable to parse websocket message:\n    msg: $text\n    err: $e")
                 }
             }
         }
 
-        this.socket = client.newWebSocket(apiReq(url), listener)
+        socket = client.newWebSocket(apiReq(url), listener)
     }
 
-    private fun parseSocketMsg(msg: String, callback: (Position) -> Unit) {
+    private fun parseSocketMsg(msg: String) {
         val jsonOuter = JSONObject(msg)
         val jsonPositions = try {
             jsonOuter.getJSONArray("positions")
@@ -147,7 +152,7 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
             val jsonPosition = jsonPositions.getJSONObject(i)
             val pos = parsePosition(jsonPosition)
             log(Log.VERBOSE, "got position update: $pos")
-            callback(pos)
+            eventListener.traccarPositionUpdate(pos)
         }
     }
 
@@ -203,6 +208,15 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
         }
     }
 
+    private fun socketConnected() {
+        eventListener.traccarSocketConnectedState(true)
+    }
+
+    private fun socketDisconnected() {
+        this.socket = null
+        eventListener.traccarSocketConnectedState(false)
+    }
+
     private fun saveURL(url: HttpUrl) {
         with (sharedPrefs.edit()) {
             putString(BASE_URL_KEY, url.toString())
@@ -229,4 +243,10 @@ class TraccarApi(context: Context, logger: (priority: Int, msg: String) -> Unit)
             .addPathSegment("socket")
             .build()
     }
+}
+
+interface TraccarEventListener {
+    fun traccarApiLogMessage(level: Int, msg: String)
+    fun traccarSocketConnectedState(isConnected: Boolean)
+    fun traccarPositionUpdate(pos: Position)
 }
