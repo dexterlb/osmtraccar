@@ -24,7 +24,7 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
 
     private lateinit var baseURL: HttpUrl
     private val client = OkHttpClient.Builder()
-        .cookieJar(PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context)))
+        .cookieJar(PersistentlyPersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context)))
         .build()
 
     private var socket: WebSocket? = null
