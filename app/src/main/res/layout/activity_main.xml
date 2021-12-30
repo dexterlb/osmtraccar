@@ -46,6 +46,22 @@
                             android:onClick="traccarDisconnect"
                     />
             </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:orientation="horizontal">
+                <Button
+                        android:text="start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/buttonStart"
+                        android:onClick="startService"
+                />
+                <Button
+                        android:text="stop"
+                        android:enabled="false"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/buttonStop"
+                        android:onClick="stopService"
+                />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -1,5 +1,6 @@
 package org.qtrp.osmtraccar
 
+import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -36,6 +37,24 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         traccarApi = TraccarApi(this, this)
 
         initOsmandApi()
+    }
+
+    fun startService(view: View) {
+        Intent(this, TheService::class.java).also { intent ->
+            logMsg(Log.WARN, "start service")
+
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                applicationContext.startForegroundService(intent)
+            } else {
+                // startForegroundService not available on older APIs
+                applicationContext.startService(intent)
+            }
+        }
+    }
+
+    fun stopService(view: View) {
+
     }
 
     fun traccarLogin(view: View) {
