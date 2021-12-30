@@ -19,7 +19,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class TraccarApi(context: Context, eventListener: EventListener) {
+class TraccarApi(context: Context, private val eventListener: EventListener) {
     companion object {
         const val BASE_URL_KEY = "base_url"
         const val EMAIL_KEY = "email"
@@ -32,7 +32,6 @@ class TraccarApi(context: Context, eventListener: EventListener) {
 
     private var socket: WebSocket? = null
     private val log = eventListener::traccarApiLogMessage
-    private val eventListener = eventListener
 
     private val sharedPrefs = context.getSharedPreferences("traccar_api_prefs", Context.MODE_PRIVATE)
 
