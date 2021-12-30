@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
     private val TAG = "main"
     private lateinit var binding: ActivityMainBinding
 
+    private lateinit var traccarApi: TraccarApi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +37,14 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
         binding.logEdit.setHorizontallyScrolling(true)
 
         setContentView(view)
+
+        traccarApi = TraccarApi(this, this)
+
+        if (traccarApi.getEmail() == null) {
+            binding.layoutFirstRun.visibility = View.VISIBLE
+        } else {
+            binding.layoutRegular.visibility = View.VISIBLE
+        }
 
         connectService(start = false)
     }
@@ -103,17 +112,19 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
         log(Log.INFO, "service bound")
         binding.buttonStop.isEnabled = true
         binding.buttonStart.isEnabled = false
+        binding.buttonTraccarLogin.isEnabled = false
+        binding.buttonTraccarReLogin.isEnabled = false
     }
 
     private fun onServiceDied() {
         log(Log.INFO, "service died")
         binding.buttonStop.isEnabled = false
         binding.buttonStart.isEnabled = true
+        binding.buttonTraccarLogin.isEnabled = true
+        binding.buttonTraccarReLogin.isEnabled = true
     }
 
     fun traccarLogin(view: View) {
-        val traccarApi = TraccarApi(this, this)
-
         val onLogin: (TraccarConnData) -> Unit = { connData ->
             val scope = CoroutineScope(Job() + Dispatchers.IO)
 
@@ -123,6 +134,11 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
                         log(Log.WARN, "trying to login with empty password; this is probably not what you want.")
                     }
                     traccarApi.login(connData.url, connData.email, connData.pass)
+
+                    runOnUiThread {
+                        binding.layoutFirstRun.visibility = View.GONE
+                        binding.layoutRegular.visibility = View.VISIBLE
+                    }
                 } catch(e: Exception) {
                     log(Log.ERROR, "unable to login: $e\nyou entered the correct URL, email and password, right?")
                 }
