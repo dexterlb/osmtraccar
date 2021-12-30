@@ -52,14 +52,14 @@
                         android:text="start"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" android:id="@+id/buttonStart"
-                        android:onClick="startService"
+                        android:onClick="requestStartService"
                 />
                 <Button
                         android:text="stop"
                         android:enabled="false"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" android:id="@+id/buttonStop"
-                        android:onClick="stopService"
+                        android:onClick="requestStopService"
                 />
             </LinearLayout>
         </LinearLayout>

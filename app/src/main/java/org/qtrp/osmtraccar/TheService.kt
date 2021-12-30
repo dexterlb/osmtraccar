@@ -1,12 +1,28 @@
 package org.qtrp.osmtraccar
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
+object TheServiceRunning {
+    var isRunning = false
+}
+
 class TheService : Service() {
+    data class Params(
+        val eventListener: EventListener
+    )
+
+    interface EventListener {
+        fun serviceLogMessage(level: Int, msg: String)
+    }
+
+    private var mEventListener: EventListener? = null
+
     private var startMode: Int = 0             // indicates how to behave if the service is killed
     private var binder = LocalBinder()
     private var allowRebind: Boolean = false   // indicates whether onRebind should be used
@@ -15,6 +31,11 @@ class TheService : Service() {
         val NOTIFICATION_CHANNEL_PERSISTENT = "notification_channel_persistent"
 
         val NOTIFICATION_ID_PERSISTENT = 42
+    }
+
+
+    fun pleaseStop() {
+        stopSelf()
     }
 
     override fun onCreate() {
@@ -53,6 +74,7 @@ class TheService : Service() {
 
     override fun onUnbind(intent: Intent): Boolean {
         // All clients have unbound with unbindService()
+        mEventListener = null   // TODO: is this the only case when the eventListener will become defunct?
         return allowRebind
     }
 
@@ -63,6 +85,28 @@ class TheService : Service() {
 
     override fun onDestroy() {
         // The service is no longer used and is being destroyed
+        TheServiceRunning.isRunning = false
+    }
+
+    fun begin() {
+        TheServiceRunning.isRunning = true
+
+        log(Log.INFO, "service begin!")
+    }
+
+    fun hello(eventListener: EventListener) {
+        mEventListener = eventListener
+
+        log(Log.INFO, "hello from service")
+    }
+
+    private fun log(priority: Int, msg: String) {
+        val eventListener = mEventListener
+        if (eventListener != null) {
+            eventListener.serviceLogMessage(priority, msg)
+        } else {
+            Log.println(priority, "the_service", "msg")
+        }
     }
 
     inner class LocalBinder : Binder() {

@@ -1,9 +1,12 @@
 package org.qtrp.osmtraccar
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -16,7 +19,10 @@ import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
 @Suppress("UNUSED_PARAMETER")
-class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, TraccarEventListener {
+class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, TraccarEventListener, TheService.EventListener {
+    var mService: TheService? = null
+
+
     private val pointShower = PointShower()
     private lateinit var traccarApi: TraccarApi
     private val TAG = "main"
@@ -37,24 +43,79 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         traccarApi = TraccarApi(this, this)
 
         initOsmandApi()
+
+        connectService(start = false)
     }
 
-    fun startService(view: View) {
-        Intent(this, TheService::class.java).also { intent ->
-            logMsg(Log.WARN, "start service")
+    fun requestStartService(view: View) {
+        connectService(start = true)
+    }
 
+    private fun connectService(start: Boolean) {
+        val isRunning = TheServiceRunning.isRunning
+        if (!isRunning && !start) {
+            return
+        }
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                applicationContext.startForegroundService(intent)
-            } else {
-                // startForegroundService not available on older APIs
-                applicationContext.startService(intent)
+        val conn = object : ServiceConnection {
+            // Called when the connection with the service is established
+            override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                // Because we have bound to an explicit
+                // service that is running in our own process, we can
+                // cast its IBinder to a concrete class and directly access it.
+                val binder = service as TheService.LocalBinder
+                val serviceObj = binder.service()
+                serviceObj.hello(this@MainActivity)
+                mService = serviceObj
+                onServiceBound()
+                if (!isRunning && start) {
+                    serviceObj.begin()
+                }
             }
+
+            // Called when the connection with the service disconnects unexpectedly
+            override fun onServiceDisconnected(className: ComponentName) {
+                mService = null
+                onServiceDied()
+            }
+        }
+
+        Intent(this, TheService::class.java).also { intent ->
+            if (!isRunning) {
+                logMsg(Log.INFO, "start service")
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    applicationContext.startForegroundService(intent)
+                } else {
+                    // startForegroundService not available on older APIs
+                    applicationContext.startService(intent)
+                }
+            }
+
+            bindService(intent, conn, 0)
         }
     }
 
-    fun stopService(view: View) {
+    fun requestStopService(view: View) {
+        val service = this.mService
+        if (service == null) {
+            logMsg(Log.ERROR, "trying to tell service to stop, but it is already stopped?")
+            return
+        }
 
+        service.pleaseStop()
+    }
+
+    private fun onServiceBound() {
+        logMsg(Log.INFO, "service bound")
+        binding.buttonStop.isEnabled = true
+        binding.buttonStart.isEnabled = false
+    }
+
+    private fun onServiceDied() {
+        logMsg(Log.INFO, "service died")
+        binding.buttonStop.isEnabled = false
+        binding.buttonStart.isEnabled = true
     }
 
     fun traccarLogin(view: View) {
@@ -144,6 +205,10 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
 
     override fun traccarApiLogMessage(level: Int, msg: String) {
         logMsg(level, "[traccar] $msg")
+    }
+
+    override fun serviceLogMessage(level: Int, msg: String) {
+        logMsg(level, msg)
     }
 
     override fun onDestroy() {
