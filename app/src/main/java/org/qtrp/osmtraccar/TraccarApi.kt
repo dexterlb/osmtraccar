@@ -14,6 +14,7 @@ import java.io.IOException
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -36,6 +37,9 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
     private val sharedPrefs = context.getSharedPreferences("traccar_api_prefs", Context.MODE_PRIVATE)
 
     private val deviceJsonCache = hashMapOf<Int, JSONObject>()
+    private val devicePositionJsonCache = hashMapOf<Int, JSONObject>()
+
+    private val positionTimers = hashMapOf<Int, Timer>()
 
     suspend fun login(url: HttpUrl, email: String, pass: String): Boolean {
         val loginUrl = url.newBuilder()
@@ -151,7 +155,50 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
             log(Log.VERBOSE, "got device update for id $devID")
 
             deviceJsonCache[devID] = jsonDevice
+
+            scheduleDefaultPositionUpdate(devID)
         }
+    }
+
+    // we usually receive a "device update" and then shortly a "position update".
+    // in order not to send point updates twice, device updates are cached and the
+    // point is updated at the position update.
+    //
+    // however, sometimes we just receive a device update (e.g. device went offline).
+    // in these cases, we must update the point regardless: to do this, we schedule
+    // a future task that will update the point if no position arrives for some time.
+    private fun scheduleDefaultPositionUpdate(devID: Int) {
+        var positionTimer = positionTimers[devID]
+        if (positionTimer == null) {
+            positionTimer = Timer()
+            positionTimers[devID] = positionTimer
+        }
+
+        positionTimer.schedule(
+            object: TimerTask() {
+                override fun run() {
+                    val jsonPosition = devicePositionJsonCache[devID] ?: return // no position yet
+                    val jsonDevice = deviceJsonCache[devID] ?: throw Exception("lost device $devID?")
+
+                    val point = parsePoint(jsonPosition, jsonDevice)
+                    log(Log.VERBOSE, "updating point since we received no position for some time: $point")
+                    eventListener.traccarPointUpdate(point)
+                }
+            },
+            5000,
+        )
+    }
+
+    private fun cancelDefaultPositionUpdate(devID: Int) {
+        val timer = positionTimers[devID] ?: return
+
+        try {
+            timer.cancel()
+        } catch (e: Exception) {
+            // probably already canceled, fuck it
+        }
+
+        positionTimers.remove(devID)
     }
 
     private fun parsePositionMsg(obj: JSONObject) {
@@ -163,7 +210,14 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
 
         for (i in 0 until jsonPositions.length()) {
             val jsonPosition = jsonPositions.getJSONObject(i)
-            val point = parsePoint(jsonPosition)
+            val devID = jsonPosition.getInt("deviceId")
+
+            val jsonDevice = deviceJsonCache[devID] ?: throw Exception("no device with id $devID")
+
+            devicePositionJsonCache[devID] = jsonPosition
+            cancelDefaultPositionUpdate(devID)
+
+            val point = parsePoint(jsonPosition, jsonDevice)
             log(Log.VERBOSE, "got position update: $point")
             eventListener.traccarPointUpdate(point)
         }
@@ -177,17 +231,15 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
 
         val data = apiCall(url)
 
-        val jsonPos = JSONArray(data).getJSONObject(0)
+        val jsonPosition = JSONArray(data).getJSONObject(0)
+        val devID = jsonPosition.getInt("deviceId")
+        val jsonDevice = deviceJsonCache[devID] ?: throw Exception("no device with id $devID")
 
-        return parsePoint(jsonPos)
+        return parsePoint(jsonPosition, jsonDevice)
     }
 
     // gets device data from cache and uses given position data to construct a point
-    private fun parsePoint(jsonPos: JSONObject): Point {
-        val devID = jsonPos.getInt("deviceId")
-
-        val jsonDevice = deviceJsonCache[devID] ?: throw Exception("no device with id $devID")
-
+    private fun parsePoint(jsonPos: JSONObject, jsonDevice: JSONObject): Point {
         val attrs = jsonDevice.getJSONObject("attributes")
 
         val point = Point(
