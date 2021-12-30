@@ -1,10 +1,14 @@
 package org.qtrp.osmtraccar
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.util.Log
+import androidx.core.content.ContextCompat.startActivity
 import net.osmand.aidlapi.map.ALatLon
 import net.osmand.aidlapi.maplayer.point.AMapPoint
+
 
 class PointShowerException(message:String) : Exception(message) {
 }
@@ -17,11 +21,14 @@ class PointShower() {
 
     private lateinit var aidlHelper: OsmAndAidlHelper
     private lateinit var osmAndHelper: OsmAndHelper
+    private lateinit var osmAndPackage: String
     private lateinit var log: (Int, String) -> Unit
 
     private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
     private lateinit var osmandInitActivity: Activity
+
+    private var mLastPoint: Point? = null
 
     fun setOsmandInitActivity(activity: Activity) {
         osmandInitActivity = activity
@@ -30,6 +37,7 @@ class PointShower() {
     fun initOsmAndApi(eventListener: OsmAndHelper.OsmandEventListener, osmandPackage: String) {
         log = eventListener::osmandLog
 
+        this.osmAndPackage = osmandPackage
         osmAndHelper = OsmAndHelper(osmandInitActivity, REQUEST_OSMAND_API, eventListener)
         aidlHelper = OsmAndAidlHelper(osmandInitActivity.application, eventListener, osmandPackage)
     }
@@ -51,6 +59,7 @@ class PointShower() {
 
         for (point in points) {
             currentPoints[point.ID] = point
+            updateLastPoint(point)
             osmandPoints.add(pointToOsmandPoint(point))
         }
 
@@ -78,9 +87,34 @@ class PointShower() {
         val pointName = point.name
 
         log(Log.VERBOSE, "updating position of point $pointID ($pointName)")
-        val osmandPoint = pointToOsmandPoint(point)
+        updateLastPoint(point)
 
+        val osmandPoint = pointToOsmandPoint(point)
         aidlHelper.updateMapPoint(MAP_LAYER, osmandPoint.id, osmandPoint.shortName, osmandPoint.fullName, osmandPoint.typeName, osmandPoint.color, osmandPoint.location, osmandPoint.details, osmandPoint.params)
+    }
+
+    fun showOsmAnd(context: Context) {
+        val launchIntent = context.getPackageManager().getLaunchIntentForPackage(osmAndPackage)
+        if (launchIntent != null) {
+            context.startActivity(launchIntent)
+        }
+
+        val lastPoint = mLastPoint
+        if (lastPoint != null) {
+            showPoint(lastPoint)
+        }
+    }
+
+    fun showPoint(point: Point) {
+        val osmandPoint = pointToOsmandPoint(point)
+        aidlHelper.showMapPoint(MAP_LAYER, osmandPoint.id, osmandPoint.shortName, osmandPoint.fullName, osmandPoint.typeName, osmandPoint.color, osmandPoint.location, osmandPoint.details, osmandPoint.params)
+    }
+
+    private fun updateLastPoint(point: Point) {
+        val lastPoint = mLastPoint
+        if (lastPoint == null || point.position.time > lastPoint.position.time) {
+            mLastPoint = point
+        }
     }
 
     private fun pointToOsmandPoint(point: Point): AMapPoint {

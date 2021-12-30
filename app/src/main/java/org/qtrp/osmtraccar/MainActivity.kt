@@ -111,6 +111,7 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
     private fun onServiceBound() {
         log(Log.INFO, "service bound")
         binding.buttonStop.isEnabled = true
+        binding.buttonShowOsmAnd.isEnabled = true
         binding.buttonStart.isEnabled = false
         binding.buttonTraccarLogin.isEnabled = false
         binding.buttonTraccarReLogin.isEnabled = false
@@ -119,9 +120,20 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEvent
     private fun onServiceDied() {
         log(Log.INFO, "service died")
         binding.buttonStop.isEnabled = false
+        binding.buttonShowOsmAnd.isEnabled = false
         binding.buttonStart.isEnabled = true
         binding.buttonTraccarLogin.isEnabled = true
         binding.buttonTraccarReLogin.isEnabled = true
+    }
+
+    fun showOsmAnd(view: View) {
+        val service = this.mService
+        if (service == null) {
+            log(Log.ERROR, "service is dead but trying to show osmand")
+            return
+        }
+
+        service.showOsmAnd()
     }
 
     fun traccarLogin(view: View) {

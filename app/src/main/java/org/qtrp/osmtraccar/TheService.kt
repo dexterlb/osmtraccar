@@ -42,6 +42,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
         const val NOTIFICATION_ID_PERSISTENT = 42
 
         const val ACTION_STOP_SERVICE = "action_stop_service"
+        const val ACTION_SHOW_OSMAND  = "action_show_osmand"
     }
 
 
@@ -108,6 +109,10 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
         }
     }
 
+    fun showOsmAnd() {
+        pointShower.showOsmAnd(this)
+    }
+
     override fun traccarSocketConnectedState(isConnected: Boolean) {
         if (isConnected) {
             log(Log.INFO, "traccar connected")
@@ -150,6 +155,15 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
 
         val stopAction = NotificationCompat.Action(R.drawable.osmtraccar_stop_icon, "stop", stopActionIntent)
 
+        val showOsmAndActionIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            Intent(ACTION_SHOW_OSMAND),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val showOsmAndAction = NotificationCompat.Action(R.drawable.osmtraccar_go_icon, "show osmand", showOsmAndActionIntent)
+
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_PERSISTENT)
             .setContentTitle("Traccar -> OsmAnd")
             .setContentText(text)
@@ -157,6 +171,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
             .setContentIntent(pendingIntent)
             .setTicker(text)
             .addAction(stopAction)
+            .addAction(showOsmAndAction)
             .build()
     }
 
@@ -166,6 +181,13 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
                     pleaseStop()
                 }
             }, IntentFilter(ACTION_STOP_SERVICE)
+        )
+
+        registerNotificationReceiver(object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    pointShower.showOsmAnd(this@TheService)
+                }
+            }, IntentFilter(ACTION_SHOW_OSMAND)
         )
     }
 

@@ -61,6 +61,13 @@
                         android:onClick="requestStopService"
                 />
             </LinearLayout>
+            <Button
+                    android:text="show OsmAnd"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonShowOsmAnd"
+                    android:enabled="false"
+                    android:onClick="showOsmAnd"
+            />
         </LinearLayout>
         </LinearLayout>
     </ScrollView>

@@ -11,6 +11,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -185,8 +186,9 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
         )
     }
 
-    private fun parseTime(s: String): Date {
-        return Date(42)
+    private fun parseTime(s: String): Instant {
+        val odt = OffsetDateTime.parse(s, DateTimeFormatter.ISO_DATE_TIME)
+        return Instant.from(odt)
     }
 
     private suspend fun apiCall(url: HttpUrl): String {
