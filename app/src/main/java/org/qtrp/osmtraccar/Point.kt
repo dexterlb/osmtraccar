@@ -10,7 +10,11 @@ data class Point(
     val imageURL: HttpUrl?,
 
     val position: Position,
-)
+) {
+    fun isStale(): Boolean {
+        return (status != PointStatus.ONLINE)
+    }
+}
 
 enum class PointStatus {
     ONLINE,

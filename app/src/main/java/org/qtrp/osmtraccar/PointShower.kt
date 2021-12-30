@@ -4,10 +4,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
+import android.text.TextUtils
 import android.util.Log
 import androidx.core.content.ContextCompat.startActivity
 import net.osmand.aidlapi.map.ALatLon
 import net.osmand.aidlapi.maplayer.point.AMapPoint
+import java.io.File
 
 
 class PointShowerException(message:String) : Exception(message) {
@@ -125,6 +128,12 @@ class PointShower() {
             else               -> Color.RED
         }
 
+
+        val params = mutableMapOf(
+            AMapPoint.POINT_IMAGE_URI_PARAM to makeImageUri(point).toString(),
+            AMapPoint.POINT_STALE_LOC_PARAM to point.isStale().toString()
+        )
+
         return AMapPoint(
             String.format("point_%d", point.ID),
             point.name,
@@ -134,7 +143,21 @@ class PointShower() {
             colour,
             ALatLon(pos.lat, pos.lon),
             emptyList(),
-            null
+            params
         )
+    }
+
+    private fun makeImageUri(point: Point): Uri {
+//        if (point.imageURL != null) {
+            val id = if (point.isStale()) {
+                R.drawable.img_point_placeholder_stale
+            } else {
+                R.drawable.img_point_placeholder_active
+            }
+
+            return AndroidUtils.resourceToUri(osmandInitActivity.application, id)
+//        } else {
+//            return AndroidUtils.getUriForFile(app, File(photoPath))
+//        }
     }
 }
