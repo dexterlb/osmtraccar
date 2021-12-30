@@ -24,28 +24,44 @@
             android:layout_height="0dp" android:layout_weight="50">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                       android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:id="@+id/layoutFirstRun"
+                      android:visibility="gone">
             <Button
-                    android:text="login to traccar"
+                    android:text="login"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" android:id="@+id/buttonTraccarLogin"
                     android:onClick="traccarLogin"
             />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:id="@+id/layoutRegular"
+                      android:visibility="gone">
+            <Button
+                    android:text="relogin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/buttonTraccarReLogin"
+                    android:onClick="traccarLogin"
+            />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <Button
-                            android:text="connect"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:id="@+id/buttonTraccarConnect"
-                            android:onClick="traccarConnect"
-                    />
-                    <Button
-                            android:text="disconnect"
-                            android:enabled="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:id="@+id/buttonTraccarDisconnect"
-                            android:onClick="traccarDisconnect"
-                    />
+                          android:orientation="horizontal">
+                <Button
+                        android:text="start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/buttonStart"
+                        android:onClick="requestStartService"
+                />
+                <Button
+                        android:text="stop"
+                        android:enabled="false"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/buttonStop"
+                        android:onClick="requestStopService"
+                />
             </LinearLayout>
+        </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

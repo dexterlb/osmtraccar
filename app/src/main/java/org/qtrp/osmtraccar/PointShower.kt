@@ -21,13 +21,17 @@ class PointShower() {
 
     private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
-    private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME
+    private lateinit var osmandInitActivity: Activity
 
-    fun initOsmAndApi(activity: Activity, eventListener: OsmAndHelper.OsmandEventListener, osmandPackage: String) {
+    fun setOsmandInitActivity(activity: Activity) {
+        osmandInitActivity = activity
+    }
+
+    fun initOsmAndApi(eventListener: OsmAndHelper.OsmandEventListener, osmandPackage: String) {
         log = eventListener::osmandLog
 
-        osmAndHelper = OsmAndHelper(activity, REQUEST_OSMAND_API, eventListener)
-        aidlHelper = OsmAndAidlHelper(activity.application, eventListener, osmandPackage)
+        osmAndHelper = OsmAndHelper(osmandInitActivity, REQUEST_OSMAND_API, eventListener)
+        aidlHelper = OsmAndAidlHelper(osmandInitActivity.application, eventListener, osmandPackage)
     }
 
     // remove all devices and clear all points from osmand
