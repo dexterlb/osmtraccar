@@ -11,6 +11,9 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -178,8 +181,12 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
             pointID = jsonPos.getInt("deviceId"),
             lat = jsonPos.getDouble("latitude"),
             lon = jsonPos.getDouble("longitude"),
-            time = jsonPos.getString("deviceTime"),
+            time = parseTime(jsonPos.getString("deviceTime")),
         )
+    }
+
+    private fun parseTime(s: String): Date {
+        return Date(42)
     }
 
     private suspend fun apiCall(url: HttpUrl): String {

@@ -37,11 +37,11 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
     private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME
 
     companion object {
-        val NOTIFICATION_CHANNEL_PERSISTENT = "notification_channel_persistent"
+        const val NOTIFICATION_CHANNEL_PERSISTENT = "notification_channel_persistent"
 
-        val NOTIFICATION_ID_PERSISTENT = 42
+        const val NOTIFICATION_ID_PERSISTENT = 42
 
-        val ACTION_STOP_SERVICE = "action_stop_service"
+        const val ACTION_STOP_SERVICE = "action_stop_service"
     }
 
 
@@ -145,7 +145,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
             this,
             0,
             Intent(ACTION_STOP_SERVICE),
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val stopAction = NotificationCompat.Action(R.drawable.osmtraccar_stop_icon, "stop", stopActionIntent)
@@ -238,8 +238,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
     }
 
     private fun createNotificationChannels() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-            && !notificationChannelAlreadyCreated(NOTIFICATION_CHANNEL_PERSISTENT)) {
+        if (notificationChannelAlreadyCreated(NOTIFICATION_CHANNEL_PERSISTENT)) {
             // Create the NotificationChannel
             val name = "Persistent"
             val descriptionText = "Persistent notification for long-running service"
@@ -255,12 +254,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
     }
 
     private fun notificationChannelAlreadyCreated(id: String): Boolean {
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
-            return true
-        }
-
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
         return (notificationManager.getNotificationChannel(id) != null)
     }
 }
