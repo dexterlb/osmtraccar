@@ -19,16 +19,13 @@ import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
 @Suppress("UNUSED_PARAMETER")
-class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, TraccarEventListener, TheService.EventListener {
+class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEventListener {
     var mService: TheService? = null
 
 
-    private val pointShower = PointShower()
-    private lateinit var traccarApi: TraccarApi
     private val TAG = "main"
     private lateinit var binding: ActivityMainBinding
 
-    private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,10 +36,6 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         binding.logEdit.setHorizontallyScrolling(true)
 
         setContentView(view)
-
-        traccarApi = TraccarApi(this, this)
-
-        initOsmandApi()
 
         connectService(start = false)
     }
@@ -69,7 +62,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
                 mService = serviceObj
                 onServiceBound()
                 if (!isRunning && start) {
-                    serviceObj.begin()
+                    serviceObj.begin(this@MainActivity)
                 }
             }
 
@@ -82,7 +75,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
 
         Intent(this, TheService::class.java).also { intent ->
             if (!isRunning) {
-                logMsg(Log.INFO, "start service")
+                log(Log.INFO, "start service")
 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                     applicationContext.startForegroundService(intent)
@@ -99,7 +92,7 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     fun requestStopService(view: View) {
         val service = this.mService
         if (service == null) {
-            logMsg(Log.ERROR, "trying to tell service to stop, but it is already stopped?")
+            log(Log.ERROR, "trying to tell service to stop, but it is already stopped?")
             return
         }
 
@@ -107,29 +100,31 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
     }
 
     private fun onServiceBound() {
-        logMsg(Log.INFO, "service bound")
+        log(Log.INFO, "service bound")
         binding.buttonStop.isEnabled = true
         binding.buttonStart.isEnabled = false
     }
 
     private fun onServiceDied() {
-        logMsg(Log.INFO, "service died")
+        log(Log.INFO, "service died")
         binding.buttonStop.isEnabled = false
         binding.buttonStart.isEnabled = true
     }
 
     fun traccarLogin(view: View) {
+        val traccarApi = TraccarApi(this, this)
+
         val onLogin: (TraccarConnData) -> Unit = { connData ->
             val scope = CoroutineScope(Job() + Dispatchers.IO)
 
             scope.launch {
                 try {
                     if (connData.pass == "") {
-                        logMsg(Log.WARN, "trying to login with empty password; this is probably not what you want.")
+                        log(Log.WARN, "trying to login with empty password; this is probably not what you want.")
                     }
                     traccarApi.login(connData.url, connData.email, connData.pass)
                 } catch(e: Exception) {
-                    logMsg(Log.ERROR, "unable to login: $e\nyou entered the correct URL, email and password, right?")
+                    log(Log.ERROR, "unable to login: $e\nyou entered the correct URL, email and password, right?")
                 }
             }
         }
@@ -148,81 +143,11 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
         LoginDialogFragment(onLogin, oldData).show(supportFragmentManager, "login")
     }
 
-    fun traccarConnect(view: View) {
-        val scope = CoroutineScope(Job() + Dispatchers.IO)
-
-        scope.launch {
-            val points = try {
-                traccarApi.getPoints()
-            } catch (e: Exception) {
-                logMsg(Log.ERROR, "could not get data from traccar: $e")
-                traccarSocketConnectedState(false)
-                return@launch
-            }
-            logMsg(Log.VERBOSE, "points: $points")
-            pointShower.setPoints(points)
-
-            traccarApi.subscribeToPositionUpdates()
-        }
-
-        binding.buttonTraccarConnect.isEnabled = false
-    }
-
-    fun traccarDisconnect(view: View) {
-        traccarApi.unsubscribePositionUpdates()
-    }
-
-    override fun osmandMissing() {
-        if (osmandPackage == OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME) {
-            osmandPackage = OsmAndAidlHelper.OSMAND_FREE_PACKAGE_NAME
-            logMsg(Log.INFO, "failed connecting to OsmAnd Plus. Trying regular OsmAnd.")
-            initOsmandApi()
-            return
-        }
-        logMsg(Log.ERROR, "oh no, OsmAnd seems to be missing!")
-    }
-
-    override fun osmandLog(priority: Int, msg: String) {
-        logMsg(priority, "[osmand] $msg")
-    }
-
-    override fun traccarSocketConnectedState(isConnected: Boolean) {
-        runOnUiThread {
-            if (isConnected) {
-                binding.buttonTraccarDisconnect.isEnabled = true
-                binding.buttonTraccarConnect.isEnabled = false
-            } else {
-                binding.buttonTraccarDisconnect.isEnabled = false
-                binding.buttonTraccarConnect.isEnabled = true
-                pointShower.clear()
-            }
-        }
-    }
-
-    override fun traccarPositionUpdate(pos: Position) {
-        pointShower.updatePosition(pos)
-    }
-
-    override fun traccarApiLogMessage(level: Int, msg: String) {
-        logMsg(level, "[traccar] $msg")
-    }
-
     override fun serviceLogMessage(level: Int, msg: String) {
-        logMsg(level, msg)
+        log(level, msg)
     }
 
-    override fun onDestroy() {
-        pointShower.clear()
-        traccarApi.unsubscribePositionUpdates()
-        super.onDestroy()
-    }
-
-    private fun initOsmandApi() {
-        pointShower.initOsmAndApi(this, this, osmandPackage)
-        pointShower.clear()
-    }
-
-    private fun logMsg(priority: Int, msg: String) {
+    private fun log(priority: Int, msg: String) {
         Log.println(priority, TAG, msg)
 
         val colour = when(priority) {
@@ -242,5 +167,17 @@ class MainActivity : AppCompatActivity(), OsmAndHelper.OsmandEventListener, Trac
             binding.logEdit.text.append('\n')
             binding.logEdit.scrollTo(0, binding.logEdit.lineCount)
         }
+    }
+
+    override fun traccarApiLogMessage(level: Int, msg: String) {
+        log(level, msg)
+    }
+
+    override fun traccarSocketConnectedState(isConnected: Boolean) {
+        throw Exception("not using traccar socket here but it sends events?")
+    }
+
+    override fun traccarPositionUpdate(pos: Position) {
+        throw Exception("not using traccar socket here but it sends events?")
     }
 }
