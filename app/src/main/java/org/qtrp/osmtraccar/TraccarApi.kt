@@ -20,7 +20,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
-class TraccarApi(context: Context, eventListener: TraccarEventListener) {
+class TraccarApi(context: Context, eventListener: EventListener) {
     companion object {
         const val BASE_URL_KEY = "base_url"
         const val EMAIL_KEY = "email"
@@ -86,7 +86,7 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
                 name = jsonDevice.getString("name"),
                 position = Position(),
                 type = jsonDevice.getString("category"),
-                status = PointStatus.parse(jsonDevice.getString("status")),
+                status = Point.Status.parse(jsonDevice.getString("status")),
                 imageURL = if (attrs.has("image_url")) {
                     attrs.getString("image_url").toHttpUrl()
                 } else {
@@ -267,10 +267,10 @@ class TraccarApi(context: Context, eventListener: TraccarEventListener) {
             .addPathSegment("socket")
             .build()
     }
-}
 
-interface TraccarEventListener {
-    fun traccarApiLogMessage(level: Int, msg: String)
-    fun traccarSocketConnectedState(isConnected: Boolean)
-    fun traccarPositionUpdate(pos: Position)
+    interface EventListener {
+        fun traccarApiLogMessage(level: Int, msg: String)
+        fun traccarSocketConnectedState(isConnected: Boolean)
+        fun traccarPositionUpdate(pos: Position)
+    }
 }

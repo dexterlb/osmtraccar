@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import org.qtrp.osmtraccar.databinding.ActivityMainBinding
 
 @Suppress("UNUSED_PARAMETER")
-class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarEventListener {
+class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarApi.EventListener {
     var mService: TheService? = null
 
 

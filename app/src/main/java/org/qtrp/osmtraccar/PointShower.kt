@@ -124,8 +124,8 @@ class PointShower() {
         val pos = point.position
 
         val colour = when (point.status) {
-            PointStatus.ONLINE -> Color.GREEN
-            else               -> Color.RED
+            Point.Status.ONLINE -> Color.GREEN
+            else                -> Color.RED
         }
 
 

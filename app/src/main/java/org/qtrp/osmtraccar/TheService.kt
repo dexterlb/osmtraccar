@@ -18,7 +18,7 @@ object TheServiceRunning {
     var isRunning = false
 }
 
-class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventListener {
+class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.EventListener {
     interface EventListener {
         fun serviceLogMessage(level: Int, msg: String)
     }
