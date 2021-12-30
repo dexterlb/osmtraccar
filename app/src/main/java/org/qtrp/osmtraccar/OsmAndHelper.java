@@ -589,6 +589,7 @@ public class OsmAndHelper {
     public interface OsmandEventListener {
         void osmandMissing();
         void osmandLog(int priority, String msg);
+        void osmandBound();
     }
 
     private static class OsmAndIntentBuilder {

@@ -273,6 +273,7 @@ public class OsmAndAidlHelper {
             boolean res = app.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             if (res) {
                 mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service bind");
+                mOsmandMissingListener.osmandBound();
                 return true;
             } else {
                 mOsmandMissingListener.osmandLog(Log.ERROR, "OsmAnd service NOT bind");

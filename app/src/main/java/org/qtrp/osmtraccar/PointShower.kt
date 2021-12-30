@@ -36,6 +36,9 @@ class PointShower() {
 
     // remove all devices and clear all points from osmand
     fun clear() {
+        if (!this::aidlHelper.isInitialized) {
+            return
+        }
         setPoints(emptyList())
     }
 

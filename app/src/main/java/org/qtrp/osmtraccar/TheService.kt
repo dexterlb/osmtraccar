@@ -50,8 +50,6 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
 
         pointShower.setOsmandInitActivity(activity)
         initOsmandApi()
-
-        traccarConnect()
     }
 
     private fun initOsmandApi() {
@@ -65,6 +63,11 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
         pointShower.clear()
     }
 
+    override fun osmandBound() {
+        // connected to osmand, now we can connect to traccar
+        traccarConnect()
+    }
+
     override fun osmandMissing() {
         if (osmandPackage == OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME) {
             osmandPackage = OsmAndAidlHelper.OSMAND_FREE_PACKAGE_NAME
@@ -73,7 +76,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarEventList
             return
         }
         log(Log.ERROR, "oh no, OsmAnd seems to be missing!")
-        pleaseStop()
+        stopSelf()
     }
 
     override fun osmandLog(priority: Int, msg: String) {
