@@ -228,7 +228,9 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
         // The service is no longer used and is being destroyed
         TheServiceRunning.isRunning = false
         unregisterNotificationActions()
-        traccarApi.unsubscribePointUpdates()
+        if (this::traccarApi.isInitialized) {
+            traccarApi.unsubscribePointUpdates()
+        }
         pointShower.clear()
     }
 
@@ -260,23 +262,16 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
     }
 
     private fun createNotificationChannels() {
-        if (notificationChannelAlreadyCreated(NOTIFICATION_CHANNEL_PERSISTENT)) {
-            // Create the NotificationChannel
-            val name = "Persistent"
-            val descriptionText = "Persistent notification for long-running service"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val mChannel = NotificationChannel(NOTIFICATION_CHANNEL_PERSISTENT, name, importance)
-            mChannel.setSound(null, null)
-            mChannel.description = descriptionText
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(mChannel)
-        }
-    }
-
-    private fun notificationChannelAlreadyCreated(id: String): Boolean {
+        // Create the NotificationChannel
+        val name = "Persistent"
+        val descriptionText = "Persistent notification for long-running service"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val mChannel = NotificationChannel(NOTIFICATION_CHANNEL_PERSISTENT, name, importance)
+        mChannel.setSound(null, null)
+        mChannel.description = descriptionText
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        return (notificationManager.getNotificationChannel(id) != null)
+        notificationManager.createNotificationChannel(mChannel)
     }
 }
