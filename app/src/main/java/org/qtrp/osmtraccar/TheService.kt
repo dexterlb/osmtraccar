@@ -13,10 +13,6 @@ object TheServiceRunning {
 }
 
 class TheService : Service() {
-    data class Params(
-        val eventListener: EventListener
-    )
-
     interface EventListener {
         fun serviceLogMessage(level: Int, msg: String)
     }
