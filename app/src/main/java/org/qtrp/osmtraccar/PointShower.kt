@@ -26,6 +26,8 @@ class PointShower() {
     private lateinit var osmandInitActivity: Activity
 
     private var mLastPoint: Point? = null
+    
+    private val currentPoints = hashMapOf<Int, Point>()
 
     fun setOsmandInitActivity(activity: Activity) {
         osmandInitActivity = activity
@@ -48,12 +50,17 @@ class PointShower() {
     }
 
     fun setPoints(points: List<Point>) {
+        // sometimes osmand is stubborn and removing just the map layer isn't enough
+        for ((_, point) in currentPoints) {
+            removePoint(point)
+        }
         aidlHelper.removeMapLayer(MAP_LAYER)
 
         // now add the new points
         val osmandPoints: MutableList<AMapPoint> = mutableListOf()
 
         for (point in points) {
+            currentPoints[point.ID] = point
             updateLastPoint(point)
             osmandPoints.add(pointToOsmandPoint(point))
         }
@@ -64,13 +71,17 @@ class PointShower() {
     }
 
     fun updatePoint(point: Point) {
-        val pointID = point.ID
         val pointName = point.name
-
-        log(Log.VERBOSE, "updating point $pointID ($pointName)")
+        
+        if (currentPoints[point.ID] == null) {
+            throw Exception("trying to update non-existent point")
+        }
+        currentPoints[point.ID] = point
+        
         updateLastPoint(point)
 
         val osmandPoint = pointToOsmandPoint(point)
+        log(Log.VERBOSE, "updating point ${osmandPoint.id} ($pointName)")
         aidlHelper.updateMapPoint(MAP_LAYER, osmandPoint.id, osmandPoint.shortName, osmandPoint.fullName, osmandPoint.typeName, osmandPoint.color, osmandPoint.location, osmandPoint.details, osmandPoint.params)
     }
 
@@ -89,6 +100,12 @@ class PointShower() {
     fun showPoint(point: Point) {
         val osmandPoint = pointToOsmandPoint(point)
         aidlHelper.showMapPoint(MAP_LAYER, osmandPoint.id, osmandPoint.shortName, osmandPoint.fullName, osmandPoint.typeName, osmandPoint.color, osmandPoint.location, osmandPoint.details, osmandPoint.params)
+    }
+    
+    private fun removePoint(point: Point) {
+        val osmandPoint = pointToOsmandPoint(point)
+        log(Log.VERBOSE, "removing point ${osmandPoint.id}")
+        aidlHelper.removeMapPoint(MAP_LAYER, osmandPoint.id)
     }
 
     private fun updateLastPoint(point: Point) {
