@@ -1,15 +1,23 @@
 package org.qtrp.osmtraccar
 
 import okhttp3.HttpUrl
+import java.time.Instant
 
 data class Point(
-    val ID: Int,
-    val name: String,
-    val status: Status,
-    val type: String,
-    val imageURL: HttpUrl?,
+    // these change almost never:
+    val ID: Int = 0,
+    val name: String = "",
+    val type: String = "",
+    val imageURL: HttpUrl? = null,
 
-    val position: Position,
+    // these change sometimes:
+    val status: Status = Status.UNKNOWN,
+
+    // these change frequently:
+    val positionID: Int = 0,    // changes every time the position changes
+    val lat: Double = 0.0,
+    val lon: Double = 0.0,
+    val time: Instant = Instant.ofEpochSecond(0),
 ) {
     fun isStale(): Boolean {
         return (status != Status.ONLINE)

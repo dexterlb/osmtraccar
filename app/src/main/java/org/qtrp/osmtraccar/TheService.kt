@@ -66,7 +66,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
 
 
     fun pleaseStop() {
-        traccarApi.unsubscribePositionUpdates()
+        traccarApi.unsubscribePointUpdates()
         pointShower.clear()
     }
 
@@ -98,14 +98,14 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
             val points = try {
                 traccarApi.getPoints()
             } catch (e: Exception) {
-                log(Log.ERROR, "could not get data from traccar: $e")
+                log(Log.ERROR, "could not get data from traccar: ${e.stackTraceToString()}")
                 traccarSocketConnectedState(false)
                 return@launch
             }
             log(Log.VERBOSE, "points: $points")
             pointShower.setPoints(points)
 
-            traccarApi.subscribeToPositionUpdates()
+            traccarApi.subscribeToPointUpdates()
         }
     }
 
@@ -124,8 +124,8 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
         }
     }
 
-    override fun traccarPositionUpdate(pos: Position) {
-        pointShower.updatePosition(pos)
+    override fun traccarPointUpdate(point: Point) {
+        pointShower.updatePoint(point)
     }
 
     override fun traccarApiLogMessage(level: Int, msg: String) {
@@ -228,7 +228,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
         // The service is no longer used and is being destroyed
         TheServiceRunning.isRunning = false
         unregisterNotificationActions()
-        traccarApi.unsubscribePositionUpdates()
+        traccarApi.unsubscribePointUpdates()
         pointShower.clear()
     }
 

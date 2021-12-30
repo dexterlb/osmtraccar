@@ -2,15 +2,11 @@ package org.qtrp.osmtraccar
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
-import android.text.TextUtils
 import android.util.Log
-import androidx.core.content.ContextCompat.startActivity
 import net.osmand.aidlapi.map.ALatLon
 import net.osmand.aidlapi.maplayer.point.AMapPoint
-import java.io.File
 
 
 class PointShowerException(message:String) : Exception(message) {
@@ -26,8 +22,6 @@ class PointShower() {
     private lateinit var osmAndHelper: OsmAndHelper
     private lateinit var osmAndPackage: String
     private lateinit var log: (Int, String) -> Unit
-
-    private var currentPoints: HashMap<Int, Point> = hashMapOf()
 
     private lateinit var osmandInitActivity: Activity
 
@@ -54,14 +48,12 @@ class PointShower() {
     }
 
     fun setPoints(points: List<Point>) {
-        currentPoints = hashMapOf()
         aidlHelper.removeMapLayer(MAP_LAYER)
 
         // now add the new points
         val osmandPoints: MutableList<AMapPoint> = mutableListOf()
 
         for (point in points) {
-            currentPoints[point.ID] = point
             updateLastPoint(point)
             osmandPoints.add(pointToOsmandPoint(point))
         }
@@ -71,25 +63,11 @@ class PointShower() {
         }
     }
 
-    // we probably need to call this when osmand has restarted and the API has reconnected
-    fun refreshPoints() {
-        val points: List<Point> = currentPoints.values.toList()
-        setPoints(points)
-    }
-
-    fun updatePosition(position: Position) {
-        val currentPoint = currentPoints[position.pointID]
-        if (currentPoint == null) {
-            throw PointShowerException("trying to update non-existant point")
-        }
-
-        val point = currentPoint.copy(position = position)
-        currentPoints[position.pointID] = point
-
+    fun updatePoint(point: Point) {
         val pointID = point.ID
         val pointName = point.name
 
-        log(Log.VERBOSE, "updating position of point $pointID ($pointName)")
+        log(Log.VERBOSE, "updating point $pointID ($pointName)")
         updateLastPoint(point)
 
         val osmandPoint = pointToOsmandPoint(point)
@@ -115,14 +93,12 @@ class PointShower() {
 
     private fun updateLastPoint(point: Point) {
         val lastPoint = mLastPoint
-        if (lastPoint == null || point.position.time > lastPoint.position.time) {
+        if (lastPoint == null || point.time > lastPoint.time) {
             mLastPoint = point
         }
     }
 
     private fun pointToOsmandPoint(point: Point): AMapPoint {
-        val pos = point.position
-
         val colour = when (point.status) {
             Point.Status.ONLINE -> Color.GREEN
             else                -> Color.RED
@@ -141,7 +117,7 @@ class PointShower() {
             point.type,
             MAP_LAYER,
             colour,
-            ALatLon(pos.lat, pos.lon),
+            ALatLon(point.lat, point.lon),
             emptyList(),
             params
         )

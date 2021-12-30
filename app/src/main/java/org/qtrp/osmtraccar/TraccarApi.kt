@@ -14,7 +14,6 @@ import java.io.IOException
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -36,6 +35,8 @@ class TraccarApi(context: Context, eventListener: EventListener) {
     private val eventListener = eventListener
 
     private val sharedPrefs = context.getSharedPreferences("traccar_api_prefs", Context.MODE_PRIVATE)
+
+    private val deviceJsonCache = hashMapOf<Int, JSONObject>()
 
     suspend fun login(url: HttpUrl, email: String, pass: String): Boolean {
         val loginUrl = url.newBuilder()
@@ -79,30 +80,13 @@ class TraccarApi(context: Context, eventListener: EventListener) {
             val jsonDevice = jsonDevices.getJSONObject(i)
 
             val posID = jsonDevice.getInt("positionId")
-            val attrs = jsonDevice.getJSONObject("attributes")
+            val devID = jsonDevice.getInt("id")
 
-            val point = Point(
-                ID = jsonDevice.getInt("id"),
-                name = jsonDevice.getString("name"),
-                position = Position(),
-                type = jsonDevice.getString("category"),
-                status = Point.Status.parse(jsonDevice.getString("status")),
-                imageURL = if (attrs.has("image_url")) {
-                    attrs.getString("image_url").toHttpUrl()
-                } else {
-                    mustGetURL().newBuilder()
-                        .addPathSegment("images")
-                        .addPathSegment(jsonDevice.getString("category") + ".svg")
-                        .build()
-                }
-            )
-
-            points.add(point)
+            deviceJsonCache[devID] = jsonDevice
+            points.add(Point())
 
             getPositions.add(coroutineScope.async {
-                points[i] = points[i].copy(
-                    position = getPosition(posID)
-                )
+                points[i] = getPosition(posID)
             })
         }
 
@@ -111,7 +95,7 @@ class TraccarApi(context: Context, eventListener: EventListener) {
         return points
     }
 
-    fun subscribeToPositionUpdates() {
+    fun subscribeToPointUpdates() {
         val url = socketURL()
 
         log(Log.INFO, "connecting to websocket at: $url")
@@ -144,46 +128,89 @@ class TraccarApi(context: Context, eventListener: EventListener) {
         socket = client.newWebSocket(apiReq(url), listener)
     }
 
-    fun unsubscribePositionUpdates() {
+    fun unsubscribePointUpdates() {
         this.socket?.close(1000, "user wants to disconnect")
     }
 
     private fun parseSocketMsg(msg: String) {
-        val jsonOuter = JSONObject(msg)
+        val obj = JSONObject(msg)
+        parseDeviceMsg(obj)
+        parsePositionMsg(obj)
+    }
+
+    private fun parseDeviceMsg(obj: JSONObject) {
+        val jsonDevices = try {
+            obj.getJSONArray("devices")
+        } catch (e: JSONException) {
+            return
+        }
+
+        for (i in 0 until jsonDevices.length()) {
+            val jsonDevice = jsonDevices.getJSONObject(i)
+
+            val devID = jsonDevice.getInt("id")
+            log(Log.VERBOSE, "got device update for id $devID")
+
+            deviceJsonCache[devID] = jsonDevice
+        }
+    }
+
+    private fun parsePositionMsg(obj: JSONObject) {
         val jsonPositions = try {
-            jsonOuter.getJSONArray("positions")
+            obj.getJSONArray("positions")
         } catch (e: JSONException) {
             return
         }
 
         for (i in 0 until jsonPositions.length()) {
             val jsonPosition = jsonPositions.getJSONObject(i)
-            val pos = parsePosition(jsonPosition)
-            log(Log.VERBOSE, "got position update: $pos")
-            eventListener.traccarPositionUpdate(pos)
+            val point = parsePoint(jsonPosition)
+            log(Log.VERBOSE, "got position update: $point")
+            eventListener.traccarPointUpdate(point)
         }
     }
 
-    private suspend fun getPosition(pointID: Int): Position {
+    private suspend fun getPosition(posID: Int): Point {
         val url = apiURL().newBuilder()
             .addPathSegment("positions")
-            .addQueryParameter("id", pointID.toString())
+            .addQueryParameter("id", posID.toString())
             .build()
 
         val data = apiCall(url)
 
         val jsonPos = JSONArray(data).getJSONObject(0)
 
-        return parsePosition(jsonPos)
+        return parsePoint(jsonPos)
     }
 
-    private fun parsePosition(jsonPos: JSONObject): Position {
-        return Position(
-            pointID = jsonPos.getInt("deviceId"),
+    // gets device data from cache and uses given position data to construct a point
+    private fun parsePoint(jsonPos: JSONObject): Point {
+        val devID = jsonPos.getInt("deviceId")
+
+        val jsonDevice = deviceJsonCache[devID] ?: throw Exception("no device with id $devID")
+
+        val attrs = jsonDevice.getJSONObject("attributes")
+
+        val point = Point(
+            ID = jsonDevice.getInt("id"),
+            name = jsonDevice.getString("name"),
+            positionID = jsonPos.getInt("id"),
             lat = jsonPos.getDouble("latitude"),
             lon = jsonPos.getDouble("longitude"),
             time = parseTime(jsonPos.getString("deviceTime")),
+            type = jsonDevice.getString("category"),
+            status = Point.Status.parse(jsonDevice.getString("status")),
+            imageURL = if (attrs.has("image_url")) {
+                attrs.getString("image_url").toHttpUrl()
+            } else {
+                mustGetURL().newBuilder()
+                    .addPathSegment("images")
+                    .addPathSegment(jsonDevice.getString("category") + ".svg")
+                    .build()
+            }
         )
+
+        return point
     }
 
     private fun parseTime(s: String): Instant {
@@ -271,6 +298,6 @@ class TraccarApi(context: Context, eventListener: EventListener) {
     interface EventListener {
         fun traccarApiLogMessage(level: Int, msg: String)
         fun traccarSocketConnectedState(isConnected: Boolean)
-        fun traccarPositionUpdate(pos: Position)
+        fun traccarPointUpdate(point: Point)
     }
 }

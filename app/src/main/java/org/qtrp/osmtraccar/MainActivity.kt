@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity(), TheService.EventListener, TraccarApi.E
         throw Exception("not using traccar socket here but it sends events?")
     }
 
-    override fun traccarPositionUpdate(pos: Position) {
+    override fun traccarPointUpdate(point: Point) {
         throw Exception("not using traccar socket here but it sends events?")
     }
 }
