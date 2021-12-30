@@ -31,22 +31,6 @@
                     android:onClick="traccarLogin"
             />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <Button
-                            android:text="connect"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:id="@+id/buttonTraccarConnect"
-                            android:onClick="traccarConnect"
-                    />
-                    <Button
-                            android:text="disconnect"
-                            android:enabled="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" android:id="@+id/buttonTraccarDisconnect"
-                            android:onClick="traccarDisconnect"
-                    />
-            </LinearLayout>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                           android:orientation="horizontal">
                 <Button
                         android:text="start"
