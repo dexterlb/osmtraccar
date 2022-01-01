@@ -256,15 +256,19 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
         val imageUrl = if (attrs.has("image_url")) {
             attrs.getString("image_url").toHttpUrl()
         } else {
-            mustGetURL().newBuilder()
-                .addPathSegment("images")
-                .addPathSegment(jsonDevice.getString("category") + ".svg")
-                .build()
+            null
         }
 
-        var avatar = avatarCache.getCachedWebAvatar(imageUrl, status)
+        val category = jsonDevice.getString("category")
+
+        var avatar = if (imageUrl != null) {
+            avatarCache.getCachedWebAvatar(imageUrl, status)
+        } else {
+            null
+        }
+
         if (avatar == null) {
-            avatar =avatarCache.getPlaceholderPointAvatar(status)
+            avatar = avatarCache.getPlaceholderPointAvatar(category, status)
         }
 
         val point = Point(
@@ -274,7 +278,7 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
             lat = jsonPos.getDouble("latitude"),
             lon = jsonPos.getDouble("longitude"),
             time = parseTime(jsonPos.getString("deviceTime")),
-            type = jsonDevice.getString("category"),
+            type = category,
             status = status,
             imageURL = imageUrl,
             avatar = avatar,
