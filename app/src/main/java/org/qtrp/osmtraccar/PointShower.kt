@@ -2,6 +2,7 @@ package org.qtrp.osmtraccar
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
@@ -12,7 +13,7 @@ import net.osmand.aidlapi.maplayer.point.AMapPoint
 class PointShowerException(message:String) : Exception(message) {
 }
 
-class PointShower() {
+class PointShower(private val context: Context) {
     companion object {
         const val REQUEST_OSMAND_API = 1001
         const val MAP_LAYER = "traccar_items"
@@ -121,11 +122,12 @@ class PointShower() {
             else                -> Color.RED
         }
 
-
         val params = mutableMapOf(
             AMapPoint.POINT_IMAGE_URI_PARAM to point.avatar.toString(),
             AMapPoint.POINT_STALE_LOC_PARAM to point.isStale().toString()
         )
+
+        grantPermissionsToGetImage(point.avatar)
 
         return AMapPoint(
             String.format("point_%d", point.ID),
@@ -137,6 +139,14 @@ class PointShower() {
             ALatLon(point.lat, point.lon),
             emptyList(),
             params
+        )
+    }
+
+    private fun grantPermissionsToGetImage(imageUri: Uri) {
+        context.grantUriPermission(
+            osmAndPackage,
+            imageUri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
         )
     }
 }

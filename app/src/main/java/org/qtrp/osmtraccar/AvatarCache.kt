@@ -58,8 +58,9 @@ class AvatarCache(private val context: Context, private val httpClient: OkHttpCl
         }
 
         val urlHash = AndroidUtils.sha256(urlString)
+        val outerDir = context.externalCacheDir
 
-        File(context.cacheDir,"avatars").mkdirs()
+        File(outerDir,"avatars").mkdirs()
 
         val filename = if (extension != "") {
             "avatars/$urlHash.$extension"
@@ -67,7 +68,7 @@ class AvatarCache(private val context: Context, private val httpClient: OkHttpCl
             "avatars/$urlHash"
         }
 
-        val file = File(context.cacheDir, filename)
+        val file = File(outerDir, filename)
 
         return file
     }
