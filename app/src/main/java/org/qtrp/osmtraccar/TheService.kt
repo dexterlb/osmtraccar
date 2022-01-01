@@ -30,8 +30,8 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
     private var binder = LocalBinder()
     private var allowRebind: Boolean = false   // indicates whether onRebind should be used
 
-
     private val pointShower = PointShower()
+
     private lateinit var traccarApi: TraccarApi
 
     private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME

@@ -1,26 +1,28 @@
 package org.qtrp.osmtraccar
 
+import android.net.Uri
 import okhttp3.HttpUrl
 import java.time.Instant
 
 data class Point(
     // these change almost never:
-    val ID: Int = 0,
-    val name: String = "",
-    val type: String = "",
-    val imageURL: HttpUrl? = null,
+    val ID: Int,
+    val name: String,
+    val type: String,
+    val imageURL: HttpUrl?,
+    val avatar: Uri,
 
     // these change sometimes:
-    val status: Status = Status.UNKNOWN,
+    val status: Status,
 
     // these change frequently:
-    val positionID: Int = 0,    // changes every time the position changes
-    val lat: Double = 0.0,
-    val lon: Double = 0.0,
-    val time: Instant = Instant.ofEpochSecond(0),
+    val positionID: Int,    // changes every time the position changes
+    val lat: Double,
+    val lon: Double,
+    val time: Instant,
 ) {
     fun isStale(): Boolean {
-        return (status != Status.ONLINE)
+        return status.isStale()
     }
 
     enum class Status {
@@ -36,6 +38,10 @@ data class Point(
                     else -> return UNKNOWN
                 }
             }
+        }
+
+        fun isStale(): Boolean {
+            return (this != ONLINE)
         }
     }
 }

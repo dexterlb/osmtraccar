@@ -31,6 +31,8 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
         .cookieJar(PersistentlyPersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context)))
         .build()
 
+    private val avatarCache = AvatarCache(context, client)
+
     private var socket: WebSocket? = null
     private val log = eventListener::traccarApiLogMessage
 
@@ -72,7 +74,7 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
 
         val data = apiCall(url)
 
-        val points = mutableListOf<Point>()
+        val points = mutableListOf<Point?>()
 
         val jsonDevices = JSONArray(data)
         val getPositions = mutableListOf<Deferred<Unit>>()
@@ -86,16 +88,23 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
             val devID = jsonDevice.getInt("id")
 
             deviceJsonCache[devID] = jsonDevice
-            points.add(Point())
+            points.add(null)
 
             getPositions.add(coroutineScope.async {
-                points[i] = getPosition(posID)
+                var point = getPosition(posID)
+                try {
+                    point = avatarCache.updatePointAvatar(point)
+                    log(Log.VERBOSE, "got avatar for point ${point.name} and saved it to ${point.avatar}")
+                } catch (e: Exception) {
+                    log(Log.ERROR, "unable to get avatar for point ${point.name}: (${point.imageURL}): ${e.stackTraceToString()}")
+                }
+                points[i] = point
             })
         }
 
         getPositions.awaitAll()
 
-        return points
+        return AndroidUtils.noNulls(points)
     }
 
     fun subscribeToPointUpdates() {
@@ -122,7 +131,7 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
                     parseSocketMsg(text)
-                } catch(e: Exception) {
+                } catch (e: Exception) {
                     log(Log.ERROR, "unable to parse websocket message:\n    msg: $text\n    err: $e")
                 }
             }
@@ -242,6 +251,22 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
     private fun parsePoint(jsonPos: JSONObject, jsonDevice: JSONObject): Point {
         val attrs = jsonDevice.getJSONObject("attributes")
 
+        val status = Point.Status.parse(jsonDevice.getString("status"))
+
+        val imageUrl = if (attrs.has("image_url")) {
+            attrs.getString("image_url").toHttpUrl()
+        } else {
+            mustGetURL().newBuilder()
+                .addPathSegment("images")
+                .addPathSegment(jsonDevice.getString("category") + ".svg")
+                .build()
+        }
+
+        var avatar = avatarCache.getCachedWebAvatar(imageUrl)
+        if (avatar == null) {
+            avatar =avatarCache.getPlaceholderPointAvatar(status)
+        }
+
         val point = Point(
             ID = jsonDevice.getInt("id"),
             name = jsonDevice.getString("name"),
@@ -250,15 +275,9 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
             lon = jsonPos.getDouble("longitude"),
             time = parseTime(jsonPos.getString("deviceTime")),
             type = jsonDevice.getString("category"),
-            status = Point.Status.parse(jsonDevice.getString("status")),
-            imageURL = if (attrs.has("image_url")) {
-                attrs.getString("image_url").toHttpUrl()
-            } else {
-                mustGetURL().newBuilder()
-                    .addPathSegment("images")
-                    .addPathSegment(jsonDevice.getString("category") + ".svg")
-                    .build()
-            }
+            status = status,
+            imageURL = imageUrl,
+            avatar = avatar,
         )
 
         return point
@@ -281,22 +300,7 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
     }
 
     private suspend fun reqCall(req: Request): String {
-        return suspendCoroutine { cont ->
-            client.newCall(req).enqueue(object: Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    cont.resumeWithException(e)
-                }
-                override fun onResponse(call: Call, response: Response){
-                    response.use {
-                        if (!response.isSuccessful) {
-                            cont.resumeWithException(IOException("Unexpected code $response"))
-                            return@use
-                        }
-                        cont.resume(response.body!!.string())
-                    }
-                }
-            })
-        }
+        return AsyncHttp.asyncRequest(client, req) { resp -> resp.body!!.string() }
     }
 
     private fun socketConnected() {

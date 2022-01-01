@@ -123,7 +123,7 @@ class PointShower() {
 
 
         val params = mutableMapOf(
-            AMapPoint.POINT_IMAGE_URI_PARAM to makeImageUri(point).toString(),
+            AMapPoint.POINT_IMAGE_URI_PARAM to point.avatar.toString(),
             AMapPoint.POINT_STALE_LOC_PARAM to point.isStale().toString()
         )
 
@@ -138,19 +138,5 @@ class PointShower() {
             emptyList(),
             params
         )
-    }
-
-    private fun makeImageUri(point: Point): Uri {
-//        if (point.imageURL != null) {
-            val id = if (point.isStale()) {
-                R.drawable.img_point_placeholder_stale
-            } else {
-                R.drawable.img_point_placeholder_active
-            }
-
-            return AndroidUtils.resourceToUri(osmandInitActivity.application, id)
-//        } else {
-//            return AndroidUtils.getUriForFile(app, File(photoPath))
-//        }
     }
 }
