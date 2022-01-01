@@ -262,7 +262,7 @@ class TraccarApi(context: Context, private val eventListener: EventListener) {
                 .build()
         }
 
-        var avatar = avatarCache.getCachedWebAvatar(imageUrl)
+        var avatar = avatarCache.getCachedWebAvatar(imageUrl, status)
         if (avatar == null) {
             avatar =avatarCache.getPlaceholderPointAvatar(status)
         }
