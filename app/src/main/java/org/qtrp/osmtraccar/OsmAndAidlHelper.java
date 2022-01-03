@@ -263,21 +263,18 @@ public class OsmAndAidlHelper {
         this.app = application;
         this.mOsmandMissingListener = listener;
         this.mOsmandPackageName = osmandPackage;
-        bindService(osmandPackage);
     }
 
-    private boolean bindService(String osmandPackage) {
+    boolean bindService(String osmandPackage) {
         if (mIOsmAndAidlInterface == null) {
             Intent intent = new Intent("net.osmand.aidl.OsmandAidlServiceV2");
             intent.setPackage(osmandPackage);
             boolean res = app.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             if (res) {
                 mOsmandMissingListener.osmandLog(Log.VERBOSE, "OsmAnd service bind");
-                mOsmandMissingListener.osmandBound();
                 return true;
             } else {
                 mOsmandMissingListener.osmandLog(Log.ERROR, "OsmAnd service NOT bind");
-                mOsmandMissingListener.osmandMissing();
                 return false;
             }
         } else {

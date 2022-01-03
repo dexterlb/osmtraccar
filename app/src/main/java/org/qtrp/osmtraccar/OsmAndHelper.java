@@ -115,12 +115,12 @@ public class OsmAndHelper {
 
     private final int mRequestCode;
     private final Activity mActivity;
-    private final OsmandEventListener mOsmandMissingListener;
+    private final OsmandEventListener mOsmandEventListener;
 
     public OsmAndHelper(Activity activity, int requestCode, OsmandEventListener listener) {
         this.mRequestCode = requestCode;
         mActivity = activity;
-        mOsmandMissingListener = listener;
+        mOsmandEventListener = listener;
     }
 
     /**
@@ -534,10 +534,10 @@ public class OsmAndHelper {
             if (isIntentSafe(intent)) {
                 mActivity.startActivityForResult(intent, mRequestCode);
             } else {
-                mOsmandMissingListener.osmandMissing();
+                mOsmandEventListener.osmandMissing();
             }
         } catch (Exception e) {
-            mOsmandMissingListener.osmandLog(Log.ERROR, e.getMessage());
+            mOsmandEventListener.osmandLog(Log.ERROR, e.getMessage());
         }
     }
 
@@ -552,10 +552,10 @@ public class OsmAndHelper {
             if (isIntentSafe(intent)) {
                 mActivity.startActivityForResult(intent, mRequestCode);
             } else {
-                mOsmandMissingListener.osmandMissing();
+                mOsmandEventListener.osmandMissing();
             }
         } catch (Exception e) {
-            mOsmandMissingListener.osmandLog(Log.ERROR, e.getMessage());
+            mOsmandEventListener.osmandLog(Log.ERROR, e.getMessage());
         }
     }
 
@@ -589,7 +589,6 @@ public class OsmAndHelper {
     public interface OsmandEventListener {
         void osmandMissing();
         void osmandLog(int priority, String msg);
-        void osmandBound();
     }
 
     private static class OsmAndIntentBuilder {

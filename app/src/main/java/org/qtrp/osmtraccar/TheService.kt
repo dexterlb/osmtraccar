@@ -34,8 +34,6 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
 
     private lateinit var traccarApi: TraccarApi
 
-    private var osmandPackage = OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME
-
     companion object {
         const val NOTIFICATION_CHANNEL_PERSISTENT = "notification_channel_persistent"
 
@@ -53,15 +51,25 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
 
         traccarApi = TraccarApi(this, this)
 
-        pointShower.setOsmandInitActivity(activity)
+        if (!initOsmandApi(activity)) {
+            osmandMissing()
+        }
 
-        initOsmandApi()
+        traccarConnect()
     }
 
-    private fun initOsmandApi() {
+    private fun initOsmandApi(activity: Activity): Boolean {
         updateNotification("connecting to OsmAnd")
-        pointShower.initOsmAndApi(this, osmandPackage)
+        if (!pointShower.initOsmAndApi(this, OsmAndAidlHelper.OSMAND_FREE_PACKAGE_NAME, activity)) {
+            log(Log.WARN, "could not connect to normal osmand, trying osmand plus")
+            if (!pointShower.initOsmAndApi(this, OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME, activity)) {
+                log(Log.ERROR, "could not connect to osmand plus")
+                return false
+            }
+        }
+
         pointShower.clear()
+        return true
     }
 
 
@@ -70,18 +78,7 @@ class TheService : Service(), OsmAndHelper.OsmandEventListener, TraccarApi.Event
         pointShower.clear()
     }
 
-    override fun osmandBound() {
-        // connected to osmand, now we can connect to traccar
-        traccarConnect()
-    }
-
     override fun osmandMissing() {
-        if (osmandPackage == OsmAndAidlHelper.OSMAND_PLUS_PACKAGE_NAME) {
-            osmandPackage = OsmAndAidlHelper.OSMAND_FREE_PACKAGE_NAME
-            log(Log.INFO, "failed connecting to OsmAnd Plus. Trying regular OsmAnd.")
-            initOsmandApi()
-            return
-        }
         log(Log.ERROR, "oh no, OsmAnd seems to be missing!")
         stopSelf()
     }
